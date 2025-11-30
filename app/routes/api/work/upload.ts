@@ -46,7 +46,10 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // Admin client로 업로드 (RLS 우회)
-    const path = `${user.id}/${Date.now()}_${file.name}`;
+    // 파일명에 한글/특수문자가 포함되면 Supabase Storage에서 에러가 발생할 수 있으므로 안전한 이름으로 변경
+    const fileExt = file.name.split(".").pop() || "bin";
+    const safeFileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const path = `${user.id}/${safeFileName}`;
 
     const { data: uploadData, error: uploadError } = await adminClient.storage
       .from("work-videos")
