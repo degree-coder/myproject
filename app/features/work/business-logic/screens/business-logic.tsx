@@ -1308,13 +1308,31 @@ export default function BusinessLogic({ loaderData }: Route.ComponentProps) {
 
   const getEditedStep = (stepId: number) => editedSteps.get(stepId);
 
-  const handleDeleteWorkflow = () => {
+  const handleDeleteWorkflow = async () => {
     if (!workflowToDelete) return;
 
-    // TODO: Implement actual delete logic via action/fetcher if needed
-    // Currently just hiding from UI for demo
-    toast.success("워크플로우가 삭제되었습니다");
-    setWorkflowToDelete(null);
+    try {
+      const res = await fetch(`/api/work/workflows/${workflowToDelete}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete workflow");
+      }
+
+      toast.success("워크플로우가 삭제되었습니다");
+
+      // 선택된 워크플로우가 삭제된 경우 선택 해제
+      if (selectedVideo?.id === workflowToDelete) {
+        setSelectedVideo(null);
+      }
+
+      setWorkflowToDelete(null);
+      revalidator.revalidate();
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("워크플로우 삭제 중 오류가 발생했습니다");
+    }
   };
 
   // Sidebar Component
