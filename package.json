@@ -45,6 +45,7 @@
     "@supabase/supabase-js": "^2.49.1",
     "@tailwindcss/postcss": "^4.1.16",
     "@tosspayments/tosspayments-sdk": "^2.3.4",
+    "@vercel/functions": "^3.3.4",
     "@vercel/og": "^0.6.5",
     "@vercel/react-router": "^1.2.3",
     "class-variance-authority": "^0.7.1",

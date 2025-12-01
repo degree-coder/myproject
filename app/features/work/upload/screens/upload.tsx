@@ -246,6 +246,11 @@ export default function Upload() {
       }
       const { workflow_id } = await analyzeRes.json();
 
+      // 워크플로우 ID 저장 (취소 시 사용)
+      setVideoFile((prev) =>
+        prev ? { ...prev, workflowId: workflow_id } : null,
+      );
+
       // 5) 진행 상황 폴링
       await pollAnalysisProgress(workflow_id);
 

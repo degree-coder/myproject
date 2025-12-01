@@ -8,6 +8,11 @@
  * - Google Cloud Video Intelligence
  * - 또는 커스텀 AI 모델
  */
+/**
+ * 백그라운드에서 비디오 분석 시작
+ * 실제 환경에서는 큐 시스템(Inngest, BullMQ) 사용 권장
+ */
+import { waitUntil } from "@vercel/functions";
 import { eq } from "drizzle-orm";
 import { promises as fs } from "fs";
 
@@ -31,98 +36,99 @@ interface VideoAnalysisResult {
 
 /**
  * 백그라운드에서 비디오 분석 시작
- * 실제 환경에서는 큐 시스템(Inngest, BullMQ) 사용 권장
+ * Vercel Serverless 환경에서는 waitUntil을 사용하여 응답 후에도 실행을 보장해야 함
  */
 export async function analyzeVideoInBackground(
   videoId: number,
   workflowId: number,
 ): Promise<void> {
-  // 비동기로 분석 시작 (큐에 추가하는 대신 setTimeout 사용)
-  // 프로덕션에서는 Inngest, BullMQ 등 사용
-  setTimeout(async () => {
-    try {
-      console.log(
-        `[Video Analyzer] Starting analysis for video ${videoId}, workflow ${workflowId}`,
-      );
+  // Vercel Functions의 waitUntil을 사용하여 백그라운드 작업 보장
+  waitUntil(
+    (async () => {
+      try {
+        console.log(
+          `[Video Analyzer] Starting analysis for video ${videoId}, workflow ${workflowId}`,
+        );
 
-      // 1. 비디오 상태 업데이트
-      await db
-        .update(workVideos)
-        .set({ status: "processing", progress: 10 })
-        .where(eq(workVideos.video_id, videoId));
+        // 1. 비디오 상태 업데이트
+        await db
+          .update(workVideos)
+          .set({ status: "processing", progress: 10 })
+          .where(eq(workVideos.video_id, videoId));
 
-      // 2. 비디오 정보 조회
-      const video = await db.query.workVideos.findFirst({
-        where: eq(workVideos.video_id, videoId),
-      });
+        // 2. 비디오 정보 조회
+        const video = await db.query.workVideos.findFirst({
+          where: eq(workVideos.video_id, videoId),
+        });
 
-      if (!video) {
-        throw new Error("Video not found");
+        if (!video) {
+          throw new Error("Video not found");
+        }
+
+        // 3. AI 분석 실행 (현재는 Mock 데이터)
+        const analysisResults = await performAIAnalysis(
+          video.storage_path,
+          workflowId,
+        );
+
+        // 4. 분석 단계 저장
+        const steps = analysisResults.map((result, index) => ({
+          workflow_id: workflowId,
+          sequence_no: index + 1,
+          type: result.type,
+          action: result.action,
+          description: result.description,
+          timestamp_label: result.timestamp_seconds
+            ? formatTimestamp(result.timestamp_seconds)
+            : null,
+          timestamp_seconds: result.timestamp_seconds ?? null,
+          confidence: result.confidence,
+          screenshot_url: result.screenshot_url ?? null,
+        }));
+
+        await db.insert(workAnalysisSteps).values(steps);
+
+        // 5. 완료 상태 업데이트
+        await db
+          .update(workWorkflows)
+          .set({
+            status: "analyzed",
+            completed_at: new Date(),
+          })
+          .where(eq(workWorkflows.workflow_id, workflowId));
+
+        await db
+          .update(workVideos)
+          .set({
+            status: "completed",
+            progress: 100,
+            completed_at: new Date(),
+          })
+          .where(eq(workVideos.video_id, videoId));
+
+        console.log(
+          `[Video Analyzer] Analysis completed for workflow ${workflowId}`,
+        );
+      } catch (error) {
+        console.error("[Video Analyzer] Error:", error);
+
+        // 에러 상태 업데이트
+        await db
+          .update(workWorkflows)
+          .set({ status: "pending" })
+          .where(eq(workWorkflows.workflow_id, workflowId));
+
+        await db
+          .update(workVideos)
+          .set({
+            status: "error",
+            error_message:
+              error instanceof Error ? error.message : "Unknown error",
+          })
+          .where(eq(workVideos.video_id, videoId));
       }
-
-      // 3. AI 분석 실행 (현재는 Mock 데이터)
-      const analysisResults = await performAIAnalysis(
-        video.storage_path,
-        workflowId,
-      );
-
-      // 4. 분석 단계 저장
-      const steps = analysisResults.map((result, index) => ({
-        workflow_id: workflowId,
-        sequence_no: index + 1,
-        type: result.type,
-        action: result.action,
-        description: result.description,
-        timestamp_label: result.timestamp_seconds
-          ? formatTimestamp(result.timestamp_seconds)
-          : null,
-        timestamp_seconds: result.timestamp_seconds ?? null,
-        confidence: result.confidence,
-        screenshot_url: result.screenshot_url ?? null,
-      }));
-
-      await db.insert(workAnalysisSteps).values(steps);
-
-      // 5. 완료 상태 업데이트
-      await db
-        .update(workWorkflows)
-        .set({
-          status: "analyzed",
-          completed_at: new Date(),
-        })
-        .where(eq(workWorkflows.workflow_id, workflowId));
-
-      await db
-        .update(workVideos)
-        .set({
-          status: "completed",
-          progress: 100,
-          completed_at: new Date(),
-        })
-        .where(eq(workVideos.video_id, videoId));
-
-      console.log(
-        `[Video Analyzer] Analysis completed for workflow ${workflowId}`,
-      );
-    } catch (error) {
-      console.error("[Video Analyzer] Error:", error);
-
-      // 에러 상태 업데이트
-      await db
-        .update(workWorkflows)
-        .set({ status: "pending" })
-        .where(eq(workWorkflows.workflow_id, workflowId));
-
-      await db
-        .update(workVideos)
-        .set({
-          status: "error",
-          error_message:
-            error instanceof Error ? error.message : "Unknown error",
-        })
-        .where(eq(workVideos.video_id, videoId));
-    }
-  }, 100);
+    })(),
+  );
 }
 
 /**
