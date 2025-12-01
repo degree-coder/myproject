@@ -1,19 +1,19 @@
 import type { Route } from "./+types/upload";
 
-import { AnimatePresence, motion } from "motion/react";
 import {
+  AlertCircle,
+  ArrowRight,
   CheckCircle2,
   FileVideo,
+  Film,
   Loader2,
+  Sparkles,
   Upload as UploadIcon,
   X,
-  AlertCircle,
-  Film,
-  Sparkles,
-  ArrowRight,
 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { useLoaderData, useSearchParams, useRevalidator } from "react-router";
+import { useLoaderData, useRevalidator, useSearchParams } from "react-router";
 
 import { Button } from "~/core/components/ui/button";
 import { Progress } from "~/core/components/ui/progress";
@@ -157,25 +157,40 @@ export default function Upload() {
   const handleUpload = async () => {
     if (!videoFile || !user) return;
     try {
-      // 1) Storage 업로드 (서버 사이드로 전송)
+      // 1) Signed URL 발급 요청
       setVideoFile({ ...videoFile, status: "uploading", progress: 0 });
 
-      const formData = new FormData();
-      formData.append("file", videoFile.file);
+      const urlFormData = new FormData();
+      urlFormData.append("filename", videoFile.file.name);
+      urlFormData.append("fileType", videoFile.file.type);
 
-      const uploadRes = await fetch("/api/work/upload", {
+      const urlRes = await fetch("/api/work/upload-url", {
         method: "POST",
-        body: formData,
+        body: urlFormData,
       });
 
-      if (!uploadRes.ok) {
-        const j = await uploadRes.json().catch(() => ({}));
-        throw new Error(j.error || `업로드 실패(${uploadRes.status})`);
+      if (!urlRes.ok) {
+        const j = await urlRes.json().catch(() => ({}));
+        throw new Error(j.error || `업로드 URL 생성 실패(${urlRes.status})`);
       }
 
-      const { path } = await uploadRes.json();
+      const { signedUrl, path, token } = await urlRes.json();
 
-      // 2) 비디오 레코드 생성
+      // 2) Supabase Storage로 직접 업로드
+      const { default: supabaseBrowser } = await import(
+        "~/core/lib/supa-client.client"
+      );
+
+      const { data: uploadData, error: uploadError } =
+        await supabaseBrowser.storage
+          .from("work-videos")
+          .uploadToSignedUrl(path, token, videoFile.file);
+
+      if (uploadError) {
+        throw new Error(uploadError.message || "Storage 업로드 실패");
+      }
+
+      // 3) 비디오 레코드 생성
       const createRes = await fetch("/api/work/videos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -194,7 +209,7 @@ export default function Upload() {
       }
       const { video_id } = await createRes.json();
 
-      // 3) 분석 시작
+      // 4) 분석 시작
       setVideoFile((prev) =>
         prev ? { ...prev, status: "processing", progress: 0 } : null,
       );
@@ -233,18 +248,19 @@ export default function Upload() {
       }
       const { workflow_id } = await analyzeRes.json();
 
-      // 4) 진행 상황 폴링
+      // 5) 진행 상황 폴링
       await pollAnalysisProgress(workflow_id);
-      
-      // 5) 결과 URL 생성 및 완료 상태 업데이트 (자동 이동 없음)
+
+      // 6) 결과 URL 생성 및 완료 상태 업데이트 (자동 이동 없음)
       const resultUrl = teamId
         ? `/work/business-logic?workflow=${workflow_id}&teamId=${teamId}`
         : `/work/business-logic?workflow=${workflow_id}`;
 
       setVideoFile((prev) =>
-        prev ? { ...prev, status: "completed", progress: 100, resultUrl } : null,
+        prev
+          ? { ...prev, status: "completed", progress: 100, resultUrl }
+          : null,
       );
-
     } catch (error: any) {
       console.error("Upload error:", error);
       setVideoFile((prev) =>
@@ -299,7 +315,7 @@ export default function Upload() {
     <div className="min-h-[calc(100vh-4rem)] w-full bg-slate-50/50 p-6 dark:bg-slate-950/50">
       <div className="container mx-auto max-w-5xl">
         {/* Header Section */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-12 text-center"
@@ -336,16 +352,20 @@ export default function Upload() {
                       일일 사용량 초과 (Daily Limit Reached)
                     </h4>
                     <p className="mt-1 text-orange-700 dark:text-orange-300">
-                      오늘의 무료 분석 횟수를 모두 사용했습니다. 내일 다시 시도해주세요.
+                      오늘의 무료 분석 횟수를 모두 사용했습니다. 내일 다시
+                      시도해주세요.
                       {rateLimitStatus.resetTime && (
                         <span className="mt-2 block font-medium">
                           초기화 시간:{" "}
-                          {new Date(rateLimitStatus.resetTime).toLocaleString("ko-KR", {
-                            month: "long",
-                            day: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                          {new Date(rateLimitStatus.resetTime).toLocaleString(
+                            "ko-KR",
+                            {
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
                         </span>
                       )}
                     </p>
@@ -375,24 +395,30 @@ export default function Upload() {
                     isRateLimited
                       ? "cursor-not-allowed border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50"
                       : isDragging
-                        ? "border-indigo-500 bg-indigo-50/50 scale-[1.02] shadow-2xl shadow-indigo-500/10 dark:border-indigo-400 dark:bg-indigo-950/20"
+                        ? "scale-[1.02] border-indigo-500 bg-indigo-50/50 shadow-2xl shadow-indigo-500/10 dark:border-indigo-400 dark:bg-indigo-950/20"
                         : "border-slate-300 bg-white/50 hover:border-indigo-400 hover:bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/50 dark:hover:border-indigo-500/50 dark:hover:bg-slate-800/50"
                   }`}
                 >
                   <div className="flex min-h-[400px] flex-col items-center justify-center p-12 text-center">
                     <div className="relative mb-8">
-                      <div className={`absolute inset-0 animate-ping rounded-full bg-indigo-400/20 duration-1000 ${isDragging ? 'opacity-100' : 'opacity-0'}`} />
-                      <div className={`flex size-24 items-center justify-center rounded-full transition-all duration-300 ${
-                        isDragging 
-                          ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300" 
-                          : "bg-slate-100 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500 dark:bg-slate-800 dark:text-slate-500 dark:group-hover:bg-indigo-900/30 dark:group-hover:text-indigo-400"
-                      }`}>
+                      <div
+                        className={`absolute inset-0 animate-ping rounded-full bg-indigo-400/20 duration-1000 ${isDragging ? "opacity-100" : "opacity-0"}`}
+                      />
+                      <div
+                        className={`flex size-24 items-center justify-center rounded-full transition-all duration-300 ${
+                          isDragging
+                            ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300"
+                            : "bg-slate-100 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500 dark:bg-slate-800 dark:text-slate-500 dark:group-hover:bg-indigo-900/30 dark:group-hover:text-indigo-400"
+                        }`}
+                      >
                         <UploadIcon className="size-10" />
                       </div>
                     </div>
 
                     <h3 className="mb-3 text-2xl font-bold text-slate-900 dark:text-slate-100">
-                      {isRateLimited ? "사용량 초과" : "동영상 파일을 올려주세요"}
+                      {isRateLimited
+                        ? "사용량 초과"
+                        : "동영상 파일을 올려주세요"}
                     </h3>
                     <p className="mb-8 max-w-md text-slate-500 dark:text-slate-400">
                       {isRateLimited
@@ -403,12 +429,14 @@ export default function Upload() {
                     {!isRateLimited && (
                       <div className="flex flex-col items-center gap-4">
                         <label htmlFor="file-upload" className="relative z-10">
-                          <Button 
-                            size="lg" 
+                          <Button
+                            size="lg"
                             className="h-12 rounded-full bg-indigo-600 px-8 text-base font-medium hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
                             asChild
                           >
-                            <span className="cursor-pointer">파일 선택 (Select File)</span>
+                            <span className="cursor-pointer">
+                              파일 선택 (Select File)
+                            </span>
                           </Button>
                           <input
                             id="file-upload"
@@ -420,7 +448,8 @@ export default function Upload() {
                         </label>
                         {rateLimitStatus && (
                           <p className="text-xs font-medium text-slate-400">
-                            오늘 사용량: {rateLimitStatus.currentCount}/{rateLimitStatus.maxDailyRequests}
+                            오늘 사용량: {rateLimitStatus.currentCount}/
+                            {rateLimitStatus.maxDailyRequests}
                           </p>
                         )}
                       </div>
@@ -448,7 +477,7 @@ export default function Upload() {
                       />
                       {/* Overlay Gradient */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
-                      
+
                       {/* File Info Overlay */}
                       <div className="absolute bottom-0 left-0 w-full p-6">
                         <div className="flex items-center gap-3">
@@ -460,7 +489,8 @@ export default function Upload() {
                               {videoFile.file.name}
                             </h3>
                             <p className="text-sm text-slate-300">
-                              {(videoFile.file.size / (1024 * 1024)).toFixed(2)} MB
+                              {(videoFile.file.size / (1024 * 1024)).toFixed(2)}{" "}
+                              MB
                             </p>
                           </div>
                         </div>
@@ -474,31 +504,34 @@ export default function Upload() {
                       <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                         처리 상태 (Processing Status)
                       </h2>
-                      {videoFile.status !== "uploading" && videoFile.status !== "processing" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleRemove}
-                          className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-                        >
-                          <X className="size-5" />
-                        </Button>
-                      )}
+                      {videoFile.status !== "uploading" &&
+                        videoFile.status !== "processing" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleRemove}
+                            className="rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                          >
+                            <X className="size-5" />
+                          </Button>
+                        )}
                     </div>
 
                     <div className="flex-1">
                       <div className="space-y-8">
                         {/* Status Steps */}
                         <div className="space-y-6">
-                          <StatusStep 
+                          <StatusStep
                             status={videoFile.status}
                             step="uploading"
                             label="동영상 업로드"
                             description="서버로 파일을 안전하게 전송합니다"
                             active={videoFile.status === "uploading"}
-                            completed={["processing", "completed"].includes(videoFile.status)}
+                            completed={["processing", "completed"].includes(
+                              videoFile.status,
+                            )}
                           />
-                          <StatusStep 
+                          <StatusStep
                             status={videoFile.status}
                             step="processing"
                             label="AI 심층 분석"
@@ -506,7 +539,7 @@ export default function Upload() {
                             active={videoFile.status === "processing"}
                             completed={videoFile.status === "completed"}
                           />
-                          <StatusStep 
+                          <StatusStep
                             status={videoFile.status}
                             step="completed"
                             label="결과 생성 완료"
@@ -517,15 +550,23 @@ export default function Upload() {
                         </div>
 
                         {/* Progress Bar */}
-                        {(videoFile.status === "uploading" || videoFile.status === "processing") && (
+                        {(videoFile.status === "uploading" ||
+                          videoFile.status === "processing") && (
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm font-medium">
                               <span className="text-indigo-600 dark:text-indigo-400">
-                                {videoFile.status === "uploading" ? "업로드 중..." : "분석 중..."}
+                                {videoFile.status === "uploading"
+                                  ? "업로드 중..."
+                                  : "분석 중..."}
                               </span>
-                              <span className="text-slate-500">{videoFile.progress}%</span>
+                              <span className="text-slate-500">
+                                {videoFile.progress}%
+                              </span>
                             </div>
-                            <Progress value={videoFile.progress} className="h-2 bg-slate-100 dark:bg-slate-800" />
+                            <Progress
+                              value={videoFile.progress}
+                              className="h-2 bg-slate-100 dark:bg-slate-800"
+                            />
                           </div>
                         )}
 
@@ -536,7 +577,9 @@ export default function Upload() {
                               <AlertCircle className="size-4" />
                               업로드 실패
                             </div>
-                            <p className="mt-1 text-sm opacity-90">{videoFile.error}</p>
+                            <p className="mt-1 text-sm opacity-90">
+                              {videoFile.error}
+                            </p>
                           </div>
                         )}
 
@@ -547,27 +590,29 @@ export default function Upload() {
                               <AlertCircle className="size-4" />
                               사용량 초과
                             </div>
-                            <p className="mt-1 text-sm opacity-90">{videoFile.error}</p>
+                            <p className="mt-1 text-sm opacity-90">
+                              {videoFile.error}
+                            </p>
                           </div>
                         )}
                       </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800">
+                    <div className="mt-8 border-t border-slate-100 pt-8 dark:border-slate-800">
                       {videoFile.status === "idle" && (
                         <div className="flex gap-3">
-                          <Button 
-                            onClick={handleUpload} 
-                            size="lg" 
+                          <Button
+                            onClick={handleUpload}
+                            size="lg"
                             className="flex-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400"
                           >
                             분석 시작 (Start Analysis)
                             <ArrowRight className="ml-2 size-4" />
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="lg" 
+                          <Button
+                            variant="outline"
+                            size="lg"
                             onClick={handleRemove}
                             className="rounded-xl border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
                           >
@@ -577,8 +622,8 @@ export default function Upload() {
                       )}
 
                       {videoFile.status === "completed" && (
-                        <Button 
-                          size="lg" 
+                        <Button
+                          size="lg"
                           onClick={() => {
                             if (videoFile.resultUrl) {
                               window.location.href = videoFile.resultUrl;
@@ -590,11 +635,12 @@ export default function Upload() {
                           <ArrowRight className="ml-2 size-4" />
                         </Button>
                       )}
-                      
-                      {(videoFile.status === "error" || videoFile.status === "rate_limited") && (
-                        <Button 
+
+                      {(videoFile.status === "error" ||
+                        videoFile.status === "rate_limited") && (
+                        <Button
                           variant="outline"
-                          size="lg" 
+                          size="lg"
                           onClick={handleRemove}
                           className="w-full rounded-xl"
                         >
@@ -613,14 +659,14 @@ export default function Upload() {
   );
 }
 
-function StatusStep({ 
-  status, 
-  step, 
-  label, 
-  description, 
-  active, 
-  completed 
-}: { 
+function StatusStep({
+  status,
+  step,
+  label,
+  description,
+  active,
+  completed,
+}: {
   status: UploadStatus;
   step: string;
   label: string;
@@ -631,13 +677,15 @@ function StatusStep({
   return (
     <div className="flex gap-4">
       <div className="relative flex flex-col items-center">
-        <div className={`flex size-8 items-center justify-center rounded-full border-2 transition-colors duration-300 ${
-          completed 
-            ? "border-indigo-600 bg-indigo-600 text-white dark:border-indigo-500 dark:bg-indigo-500" 
-            : active 
-              ? "border-indigo-600 bg-white text-indigo-600 dark:border-indigo-500 dark:bg-slate-900 dark:text-indigo-500"
-              : "border-slate-200 bg-slate-50 text-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-600"
-        }`}>
+        <div
+          className={`flex size-8 items-center justify-center rounded-full border-2 transition-colors duration-300 ${
+            completed
+              ? "border-indigo-600 bg-indigo-600 text-white dark:border-indigo-500 dark:bg-indigo-500"
+              : active
+                ? "border-indigo-600 bg-white text-indigo-600 dark:border-indigo-500 dark:bg-slate-900 dark:text-indigo-500"
+                : "border-slate-200 bg-slate-50 text-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-600"
+          }`}
+        >
           {completed ? (
             <CheckCircle2 className="size-5" />
           ) : active ? (
@@ -647,14 +695,24 @@ function StatusStep({
           )}
         </div>
         {step !== "completed" && (
-          <div className={`h-full w-0.5 my-2 ${
-            completed ? "bg-indigo-600 dark:bg-indigo-500" : "bg-slate-200 dark:bg-slate-800"
-          }`} />
+          <div
+            className={`my-2 h-full w-0.5 ${
+              completed
+                ? "bg-indigo-600 dark:bg-indigo-500"
+                : "bg-slate-200 dark:bg-slate-800"
+            }`}
+          />
         )}
       </div>
-      <div className={`pb-6 ${active || completed ? "opacity-100" : "opacity-50"}`}>
-        <h4 className="font-semibold text-slate-900 dark:text-slate-100">{label}</h4>
-        <p className="text-sm text-slate-500 dark:text-slate-400">{description}</p>
+      <div
+        className={`pb-6 ${active || completed ? "opacity-100" : "opacity-50"}`}
+      >
+        <h4 className="font-semibold text-slate-900 dark:text-slate-100">
+          {label}
+        </h4>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          {description}
+        </p>
       </div>
     </div>
   );
