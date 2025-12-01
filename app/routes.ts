@@ -68,6 +68,7 @@ export default [
     ]),
     ...prefix("/work", [
       route("/upload", "routes/api/work/upload.ts"),
+      route("/upload-url", "routes/api/work/upload-url.ts"),
       route("/videos", "routes/api/work/videos.ts"),
       route("/analyze", "routes/api/work/analyze.ts"),
       route("/workflows", "routes/api/work/workflows.ts"),
