@@ -177,9 +177,7 @@ export default function Upload() {
       const { signedUrl, path, token } = await urlRes.json();
 
       // 2) Supabase Storage로 직접 업로드
-      const { default: supabaseBrowser } = await import(
-        "~/core/lib/supa-client.client"
-      );
+      const { supabaseBrowser } = await import("~/core/lib/supa-client.client");
 
       const { data: uploadData, error: uploadError } =
         await supabaseBrowser.storage
