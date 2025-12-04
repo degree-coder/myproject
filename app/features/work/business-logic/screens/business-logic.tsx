@@ -328,6 +328,21 @@ export async function action({ request }: Route.ActionArgs) {
         { success: true, message: "스크린샷이 삭제되었습니다" },
         { headers },
       );
+    } else if (actionType === "deleteWorkflow") {
+      const workflowId = parseInt(formData.get("workflowId") as string);
+
+      if (isNaN(workflowId)) {
+        return data({ error: "Invalid workflow ID" }, { status: 400, headers });
+      }
+
+      // DB 삭제
+      const { deleteWorkflow } = await import("../queries.server");
+      await deleteWorkflow(workflowId);
+
+      return data(
+        { success: true, message: "워크플로우가 삭제되었습니다" },
+        { headers },
+      );
     }
 
     return data({ error: "Invalid action type" }, { status: 400, headers });
@@ -1308,31 +1323,21 @@ export default function BusinessLogic({ loaderData }: Route.ComponentProps) {
 
   const getEditedStep = (stepId: number) => editedSteps.get(stepId);
 
-  const handleDeleteWorkflow = async () => {
+  const handleDeleteWorkflow = () => {
     if (!workflowToDelete) return;
 
-    try {
-      const res = await fetch(`/api/work/workflows/${workflowToDelete}`, {
-        method: "DELETE",
-      });
+    const formData = new FormData();
+    formData.append("actionType", "deleteWorkflow");
+    formData.append("workflowId", workflowToDelete);
 
-      if (!res.ok) {
-        throw new Error("Failed to delete workflow");
-      }
+    fetcher.submit(formData, { method: "post" });
 
-      toast.success("워크플로우가 삭제되었습니다");
-
-      // 선택된 워크플로우가 삭제된 경우 선택 해제
-      if (selectedVideo?.id === workflowToDelete) {
-        setSelectedVideo(null);
-      }
-
-      setWorkflowToDelete(null);
-      revalidator.revalidate();
-    } catch (error) {
-      console.error("Delete error:", error);
-      toast.error("워크플로우 삭제 중 오류가 발생했습니다");
+    // 선택된 워크플로우가 삭제된 경우 선택 해제
+    if (selectedVideo?.id === workflowToDelete) {
+      setSelectedVideo(null);
     }
+
+    setWorkflowToDelete(null);
   };
 
   // Sidebar Component

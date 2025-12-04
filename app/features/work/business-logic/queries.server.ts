@@ -8,8 +8,6 @@ import { and, desc, eq, gte, inArray, isNull, or, sql } from "drizzle-orm";
 import db from "~/core/db/drizzle-client.server";
 
 import { workWorkflowMembers } from "../team-management/schema";
-
-
 import { workTeamMembers } from "../team-management/team-schema";
 import { workWorkflowShares } from "../team-management/team-shares-schema";
 import { workAnalysisSteps, workWorkflows } from "./schema";
@@ -284,4 +282,13 @@ export async function updateStepScreenshot(
     .update(workAnalysisSteps)
     .set({ screenshot_url: screenshotUrl })
     .where(eq(workAnalysisSteps.step_id, stepId));
+}
+
+/**
+ * Delete a workflow
+ */
+export async function deleteWorkflow(workflowId: number): Promise<void> {
+  await db
+    .delete(workWorkflows)
+    .where(eq(workWorkflows.workflow_id, workflowId));
 }

@@ -30,6 +30,7 @@ import { Input } from "~/core/components/ui/input";
 import { Label } from "~/core/components/ui/label";
 
 import { SignUpButtons } from "../components/auth-login-buttons";
+import { passwordSchema } from "../schemas";
 
 /**
  * Meta function for the registration page
@@ -61,12 +62,8 @@ const joinSchema = z
   .object({
     name: z.string().min(1, { message: "Name is required" }),
     email: z.string().email({ message: "Invalid email address" }),
-    password: z
-      .string()
-      .min(8, { message: "Password must be at least 8 characters long" }),
-    confirmPassword: z
-      .string()
-      .min(8, { message: "Password must be at least 8 characters long" }),
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
     avatarUrl: z.string().optional(),
     marketing: z.coerce.boolean().default(false),
     terms: z.coerce.boolean(),

@@ -2,6 +2,7 @@ import { render } from "@react-email/render";
 import { Resend } from "resend";
 
 import ResetPasswordEmail from "~/transactional-emails/emails/reset-password";
+import TeamInviteEmail from "~/transactional-emails/emails/team-invite";
 import WelcomeEmail from "~/transactional-emails/emails/welcome";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -126,6 +127,52 @@ export async function sendChangeEmailEmail({
     return { success: true, data };
   } catch (error) {
     console.error("Change email email service error:", error);
+    throw error;
+  }
+}
+
+interface SendTeamInviteEmailParams {
+  to: string;
+  teamName: string;
+  inviterName: string;
+  role: string;
+  inviteUrl: string;
+}
+
+export async function sendTeamInviteEmail({
+  to,
+  teamName,
+  inviterName,
+  role,
+  inviteUrl,
+}: SendTeamInviteEmailParams) {
+  try {
+    const emailHtml = await render(
+      <TeamInviteEmail
+        teamName={teamName}
+        inviterName={inviterName}
+        role={role}
+        inviteUrl={inviteUrl}
+      />,
+    );
+
+    const { data, error } = await resend.emails.send({
+      from: "Synchro <support@mail.synchro.it.com>",
+      to: [to],
+      subject: `${inviterName}님이 ${teamName} 팀에 초대했습니다`,
+      html: emailHtml,
+      replyTo: "support@mail.synchro.it.com",
+    });
+
+    if (error) {
+      console.error("Email send error:", error);
+      throw new Error(`Failed to send team invite email: ${error.message}`);
+    }
+
+    console.log("Team invite email sent successfully:", data);
+    return { success: true, data };
+  } catch (error) {
+    console.error("Team invite email service error:", error);
     throw error;
   }
 }

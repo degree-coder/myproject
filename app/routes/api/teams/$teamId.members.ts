@@ -1,13 +1,15 @@
-import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import { eq, and } from "drizzle-orm";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
-import makeServerClient from "~/core/lib/supa-client.server";
+import { and, eq } from "drizzle-orm";
+import { data } from "react-router";
+
 import db from "~/core/db/drizzle-client.server";
+import makeServerClient from "~/core/lib/supa-client.server";
+import { sendTeamInviteEmail } from "~/features/email/services/email.service";
 import {
-  workTeams,
-  workTeamMembers,
   workTeamInvites,
+  workTeamMembers,
+  workTeams,
 } from "~/features/work/team-management/team-schema";
 
 /**
@@ -171,6 +173,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
     invited_by: user.id as any,
     expires_at: expiresAt,
   });
+
+  // 팀 정보 조회 (이메일 발송용)
+  const [team] = await db
+    .select()
+    .from(workTeams)
+    .where(eq(workTeams.team_id, teamId as any))
+    .limit(1);
+
+  if (team) {
+    const origin = new URL(request.url).origin;
+    const inviteUrl = `${origin}/work/invite/${token}`;
+    const inviterName = user.user_metadata?.full_name || user.email || "관리자";
+
+    // 이메일 발송 (비동기 처리, 에러가 발생해도 초대는 생성됨)
+    sendTeamInviteEmail({
+      to: email,
+      teamName: team.name,
+      inviterName,
+      role: role as string,
+      inviteUrl,
+    }).catch((e) => {
+      console.error("Failed to send invite email:", e);
+    });
+  }
 
   return data({ member, inviteToken: token }, { status: 201 });
 }

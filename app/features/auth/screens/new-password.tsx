@@ -31,6 +31,8 @@ import { Input } from "~/core/components/ui/input";
 import { Label } from "~/core/components/ui/label";
 import { supabaseBrowser } from "~/core/lib/supa-client.client";
 
+import { passwordSchema } from "../schemas";
+
 /**
  * Meta function for the new password page
  *
@@ -55,8 +57,8 @@ export const meta: Route.MetaFunction = () => {
  */
 const updatePasswordSchema = z
   .object({
-    password: z.string().min(8),
-    confirmPassword: z.string().min(8),
+    password: passwordSchema,
+    confirmPassword: passwordSchema,
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords must match",
