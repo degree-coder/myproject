@@ -142,29 +142,63 @@ export async function action({ request, params }: ActionFunctionArgs) {
     )
     .limit(1);
 
-  if (existing) {
-    return data({ error: "Member already exists" }, { status: 409 });
-  }
+  let member;
 
-  // pending 상태로 멤버 추가
-  const [member] = await db
-    .insert(workTeamMembers)
-    .values({
-      team_id: teamId as any,
-      user_id: null, // 가입 전에는 null
-      email,
-      role: role as any,
-      status: "pending" as any,
-      invited_by: user.id as any,
-      invited_at: new Date(),
-    })
-    .returning();
+  if (existing) {
+    // 활성 상태인 멤버는 재초대 불가
+    if (existing.status === "active") {
+      return data({ error: "이미 팀에 가입된 멤버입니다" }, { status: 409 });
+    }
+
+    // pending 또는 inactive 상태인 경우 재초대 허용
+    // 멤버 정보 업데이트 (역할, 초대자, 초대일 갱신)
+    const [updatedMember] = await db
+      .update(workTeamMembers)
+      .set({
+        role: role as any,
+        status: "pending" as any,
+        invited_by: user.id as any,
+        invited_at: new Date(),
+      })
+      .where(eq(workTeamMembers.member_id, existing.member_id))
+      .returning();
+
+    member = updatedMember;
+  } else {
+    // 신규 멤버 추가
+    const [newMember] = await db
+      .insert(workTeamMembers)
+      .values({
+        team_id: teamId as any,
+        user_id: null, // 가입 전에는 null
+        email,
+        role: role as any,
+        status: "pending" as any,
+        invited_by: user.id as any,
+        invited_at: new Date(),
+      })
+      .returning();
+
+    member = newMember;
+  }
 
   // 초대 토큰 생성 (7일 유효)
   const token = crypto.randomUUID();
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + 7);
 
+  // 기존 초대 토큰이 있으면 만료 처리
+  await db
+    .update(workTeamInvites)
+    .set({ expires_at: new Date() }) // 즉시 만료
+    .where(
+      and(
+        eq(workTeamInvites.team_id, teamId as any),
+        eq(workTeamInvites.email, email),
+      ),
+    );
+
+  // 새 초대 토큰 생성
   await db.insert(workTeamInvites).values({
     team_id: teamId as any,
     email,

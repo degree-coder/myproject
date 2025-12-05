@@ -13,7 +13,9 @@
  */
 import type { Route } from "./+types/join";
 
-import { Form, Link, data, redirect } from "react-router";
+import { CheckCircle2, XCircle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Form, Link, data, redirect, useNavigation } from "react-router";
 import { z } from "zod";
 
 import FormButton from "~/core/components/form-button";
@@ -31,6 +33,52 @@ import { Label } from "~/core/components/ui/label";
 
 import { SignUpButtons } from "../components/auth-login-buttons";
 import { passwordSchema } from "../schemas";
+
+// Password requirement validation functions
+const passwordRequirements = [
+  { id: "length", label: "8자 이상", test: (pw: string) => pw.length >= 8 },
+  {
+    id: "uppercase",
+    label: "영문 대문자",
+    test: (pw: string) => /[A-Z]/.test(pw),
+  },
+  {
+    id: "lowercase",
+    label: "영문 소문자",
+    test: (pw: string) => /[a-z]/.test(pw),
+  },
+  { id: "number", label: "숫자", test: (pw: string) => /[0-9]/.test(pw) },
+  {
+    id: "special",
+    label: "특수문자",
+    test: (pw: string) => /[^A-Za-z0-9]/.test(pw),
+  },
+];
+
+function PasswordRequirementIndicator({
+  met,
+  label,
+}: {
+  met: boolean;
+  label: string;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-1.5 text-xs ${
+        met
+          ? "text-green-600 dark:text-green-400"
+          : "text-slate-500 dark:text-slate-400"
+      }`}
+    >
+      {met ? (
+        <CheckCircle2 className="size-3.5 text-green-600 dark:text-green-400" />
+      ) : (
+        <XCircle className="size-3.5 text-slate-400 dark:text-slate-500" />
+      )}
+      <span>{label}</span>
+    </div>
+  );
+}
 
 /**
  * Meta function for the registration page
@@ -203,6 +251,33 @@ export async function action({ request }: Route.ActionArgs) {
  * @param actionData - Data returned from the form action, including errors or success status
  */
 export default function Join({ actionData }: Route.ComponentProps) {
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === "submitting";
+
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showRequirements, setShowRequirements] = useState(false);
+
+  // Check each password requirement
+  const requirementStatus = useMemo(() => {
+    return passwordRequirements.map((req) => ({
+      ...req,
+      met: req.test(password),
+    }));
+  }, [password]);
+
+  // Check if all requirements are met
+  const allRequirementsMet = useMemo(() => {
+    return requirementStatus.every((req) => req.met);
+  }, [requirementStatus]);
+
+  // Check if passwords match
+  const passwordsMatch =
+    password === confirmPassword && confirmPassword.length > 0;
+
+  // Enable submit only when all requirements are met and passwords match
+  const canSubmit = allRequirementsMet && passwordsMatch;
+
   return (
     <div className="flex flex-col items-center justify-center gap-4">
       <Card className="w-full max-w-md">
@@ -259,9 +334,6 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 className="flex flex-col items-start gap-1"
               >
                 비밀번호
-                <small className="text-muted-foreground">
-                  최소 8자 이상이어야 합니다.
-                </small>
               </Label>
               <Input
                 id="password"
@@ -269,7 +341,26 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 required
                 type="password"
                 placeholder="비밀번호를 입력해주세요"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onFocus={() => setShowRequirements(true)}
               />
+              {/* Condensed one-line warning message */}
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                8자 이상, 영문 대/소문자, 숫자, 특수문자 각 1개 이상 포함
+              </p>
+              {/* Real-time validation feedback */}
+              {showRequirements && password.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
+                  {requirementStatus.map((req) => (
+                    <PasswordRequirementIndicator
+                      key={req.id}
+                      met={req.met}
+                      label={req.label}
+                    />
+                  ))}
+                </div>
+              )}
               {actionData &&
               "fieldErrors" in actionData &&
               actionData.fieldErrors?.password ? (
@@ -289,14 +380,42 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 required
                 type="password"
                 placeholder="비밀번호를 다시 입력해주세요"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
+              {/* Password match indicator */}
+              {confirmPassword.length > 0 && (
+                <div
+                  className={`flex items-center gap-1.5 text-xs ${
+                    passwordsMatch
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-red-500 dark:text-red-400"
+                  }`}
+                >
+                  {passwordsMatch ? (
+                    <>
+                      <CheckCircle2 className="size-3.5" />
+                      <span>비밀번호가 일치합니다</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="size-3.5" />
+                      <span>비밀번호가 일치하지 않습니다</span>
+                    </>
+                  )}
+                </div>
+              )}
               {actionData &&
               "fieldErrors" in actionData &&
               actionData.fieldErrors?.confirmPassword ? (
                 <FormErrors errors={actionData.fieldErrors.confirmPassword} />
               ) : null}
             </div>
-            <FormButton label="계정 생성" className="w-full" />
+            <FormButton
+              label="계정 생성"
+              className="w-full"
+              disabled={!canSubmit || isSubmitting}
+            />
             {actionData && "error" in actionData && actionData.error ? (
               <FormErrors errors={[actionData.error]} />
             ) : null}
