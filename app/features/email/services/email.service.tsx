@@ -25,12 +25,11 @@ export async function sendWelcomeEmail({
     );
 
     const { data, error } = await resend.emails.send({
-      from: "Synchro <onboarding@mail.synchro.it.com>",
+      from: "Synchro <onboarding@send.mail.synchro.it.com>",
       to: [to],
-      subject:
-        "싱크로에 오신 것을 환영합니다! AI 기반 업무프로세스 자동화를 시작해보세요",
+      subject: "[Synchro] 가입을 환영합니다",
       html: emailHtml,
-      replyTo: "support@mail.synchro.it.com",
+      replyTo: "support@send.mail.synchro.it.com",
     });
 
     if (error) {
@@ -64,11 +63,11 @@ export async function sendPasswordResetEmail({
     );
 
     const { data, error } = await resend.emails.send({
-      from: "Synchro <support@mail.synchro.it.com>",
+      from: "Synchro <support@send.mail.synchro.it.com>",
       to: [to],
-      subject: "비밀번호 재설정 요청",
+      subject: "[Synchro] 비밀번호 재설정 안내",
       html: emailHtml,
-      replyTo: "support@mail.synchro.it.com",
+      replyTo: "support@send.mail.synchro.it.com",
     });
 
     if (error) {
@@ -111,11 +110,11 @@ export async function sendChangeEmailEmail({
     );
 
     const { data, error } = await resend.emails.send({
-      from: "Synchro <support@mail.synchro.it.com>",
+      from: "Synchro <support@send.mail.synchro.it.com>",
       to: [to],
-      subject: "이메일 변경 확인",
+      subject: "[Synchro] 이메일 변경 인증",
       html: emailHtml,
-      replyTo: "support@mail.synchro.it.com",
+      replyTo: "support@send.mail.synchro.it.com",
     });
 
     if (error) {
@@ -157,11 +156,11 @@ export async function sendTeamInviteEmail({
     );
 
     const { data, error } = await resend.emails.send({
-      from: "Synchro <support@mail.synchro.it.com>",
+      from: "Synchro <support@send.mail.synchro.it.com>",
       to: [to],
       subject: `[Synchro] ${teamName} 팀 초대 안내`,
       html: emailHtml,
-      replyTo: "support@mail.synchro.it.com",
+      replyTo: "support@send.mail.synchro.it.com",
     });
 
     if (error) {
@@ -191,8 +190,7 @@ export async function generateWelcomeEmailTemplate(
   );
 
   return {
-    subject:
-      "싱크로에 오신 것을 환영합니다! AI 기반 업무프로세스 자동화를 시작해보세요",
+    subject: "[Synchro] 가입을 환영합니다",
     html,
   };
 }

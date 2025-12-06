@@ -49,7 +49,7 @@ export default function WelcomeEmail({
           {/* Hero Section */}
           <Section style={hero}>
             <Heading style={heroHeading}>
-              {userName}님, 싱크로에 오신 것을 환영합니다! 🎉
+              {userName}님, 싱크로에 오신 것을 환영합니다!
             </Heading>
             <Text style={heroText}>
               동영상을 업로드하면 AI가 자동으로 업무프로세스를 분석해주는
@@ -60,11 +60,11 @@ export default function WelcomeEmail({
           {/* Main Content */}
           <Section style={content}>
             <Heading style={sectionTitle}>
-              ✨ 싱크로에서 무엇을 할 수 있나요?
+              싱크로에서 무엇을 할 수 있나요?
             </Heading>
 
             <Section style={feature}>
-              <Text style={featureTitle}>🎥 동영상 업로드</Text>
+              <Text style={featureTitle}>동영상 업로드</Text>
               <Text style={featureText}>
                 MP4, MOV, AVI 등 다양한 형식의 동영상을 쉽게 업로드할 수
                 있습니다.
@@ -72,7 +72,7 @@ export default function WelcomeEmail({
             </Section>
 
             <Section style={feature}>
-              <Text style={featureTitle}>🤖 AI 자동 분석</Text>
+              <Text style={featureTitle}>AI 자동 분석</Text>
               <Text style={featureText}>
                 Google AI 기술로 동영상을 분석하여 업무 단계별로 자동
                 정리해드립니다.
@@ -80,7 +80,7 @@ export default function WelcomeEmail({
             </Section>
 
             <Section style={feature}>
-              <Text style={featureTitle}>📋 업무프로세스 카드</Text>
+              <Text style={featureTitle}>업무프로세스 카드</Text>
               <Text style={featureText}>
                 분석된 결과를 시각적인 카드 형태로 만들어 쉽게 공유하고 관리할
                 수 있습니다.
@@ -88,7 +88,7 @@ export default function WelcomeEmail({
             </Section>
 
             <Section style={feature}>
-              <Text style={featureTitle}>👥 팀 관리</Text>
+              <Text style={featureTitle}>팀 관리</Text>
               <Text style={featureText}>
                 팀원을 초대하고 함께 업무프로세스를 관리하며 협업 효율을
                 높여보세요.
@@ -116,7 +116,7 @@ export default function WelcomeEmail({
 
           {/* Tips */}
           <Section style={tipsSection}>
-            <Heading style={sectionTitle}>💡 시작을 위한 팁</Heading>
+            <Heading style={sectionTitle}>시작을 위한 팁</Heading>
             <Text style={tipsText}>
               • 5분 이내의 짧은 동영상으로 시작해보세요
               <br />
