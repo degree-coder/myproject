@@ -49,7 +49,7 @@ export default function TeamInviteEmail({
 
           {/* Hero Section */}
           <Section style={hero}>
-            <Heading style={heroHeading}>팀 초대장이 도착했습니다! 💌</Heading>
+            <Heading style={heroHeading}>팀 초대가 도착했습니다</Heading>
             <Text style={heroText}>
               <span style={{ fontWeight: "600", color: "#1e293b" }}>
                 {inviterName}

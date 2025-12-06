@@ -159,7 +159,7 @@ export async function sendTeamInviteEmail({
     const { data, error } = await resend.emails.send({
       from: "Synchro <support@mail.synchro.it.com>",
       to: [to],
-      subject: `${inviterName}님이 ${teamName} 팀에 초대했습니다`,
+      subject: `[Synchro] ${teamName} 팀 초대 안내`,
       html: emailHtml,
       replyTo: "support@mail.synchro.it.com",
     });
