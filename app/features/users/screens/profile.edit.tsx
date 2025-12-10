@@ -37,27 +37,29 @@ export default function Account({ loaderData }: Route.ComponentProps) {
     (identity) => identity.provider === "email",
   );
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="mx-auto max-w-4xl space-y-10 py-10">
       {/* Page Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">
+      <div className="flex flex-col items-center gap-2 text-center md:items-start md:text-left">
+        <h1 className="text-foreground text-3xl font-bold tracking-tight">
           프로필 설정
         </h1>
-        <p className="mt-2 text-slate-500 dark:text-slate-400">
+        <p className="text-muted-foreground text-lg">
           개인 정보와 계정 설정을 관리하세요
         </p>
       </div>
 
-      <div className="flex w-full flex-col items-center gap-8">
+      <div className="flex w-full flex-col gap-8">
         <Suspense
           fallback={
-            <div className="bg-card animate-fast-pulse h-60 w-full rounded-2xl border border-white/20 shadow-xl backdrop-blur-xl dark:border-slate-800" />
+            <div className="bg-muted/50 h-60 w-full animate-pulse rounded-xl" />
           }
         >
           <Await
             resolve={profile}
             errorElement={
-              <div className="text-red-500">프로필을 불러오지 못했습니다.</div>
+              <div className="text-destructive">
+                프로필을 불러오지 못했습니다.
+              </div>
             }
           >
             {(profile) => {
@@ -74,17 +76,21 @@ export default function Account({ loaderData }: Route.ComponentProps) {
             }}
           </Await>
         </Suspense>
-        <ChangeEmailForm email={user?.email ?? ""} />
-        <ChangePasswordForm hasPassword={hasEmailIdentity ?? false} />
+
+        <div className="grid gap-8">
+          <ChangeEmailForm email={user?.email ?? ""} />
+          <ChangePasswordForm hasPassword={hasEmailIdentity ?? false} />
+        </div>
+
         <Suspense
           fallback={
-            <div className="bg-card animate-fast-pulse h-60 w-full rounded-2xl border border-white/20 shadow-xl backdrop-blur-xl dark:border-slate-800" />
+            <div className="bg-muted/50 h-60 w-full animate-pulse rounded-xl" />
           }
         >
           <Await
             resolve={identities}
             errorElement={
-              <div className="text-red-500">
+              <div className="text-destructive">
                 소셜 계정을 불러오지 못했습니다.
               </div>
             }
@@ -92,7 +98,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
             {({ data, error }) => {
               if (!data) {
                 return (
-                  <div className="text-red-500">
+                  <div className="text-destructive">
                     <span>소셜 계정을 불러오지 못했습니다.</span>
                     <span className="text-xs">코드: {error.code}</span>
                     <span className="text-xs">메시지: {error.message}</span>
@@ -109,6 +115,7 @@ export default function Account({ loaderData }: Route.ComponentProps) {
             }}
           </Await>
         </Suspense>
+
         <DeleteAccountForm />
       </div>
     </div>

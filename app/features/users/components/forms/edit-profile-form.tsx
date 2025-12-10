@@ -1,5 +1,5 @@
 import { type Route } from "@rr/app/features/users/api/+types/edit-profile";
-import { UserIcon } from "lucide-react";
+import { Camera, UserIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 
@@ -52,93 +52,127 @@ export default function EditProfileForm({
   return (
     <fetcher.Form
       method="post"
-      className="w-full max-w-screen-md"
+      className="w-full"
       encType="multipart/form-data"
       ref={formRef}
       action="/api/users/profile"
     >
-      <Card className="overflow-hidden rounded-2xl border border-white/20 bg-white/40 shadow-xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/40">
+      <Card>
         <CardHeader>
-          <CardTitle>프로필 편집</CardTitle>
-          <CardDescription>프로필 정보를 관리하세요.</CardDescription>
+          <CardTitle>프로필 정보</CardTitle>
+          <CardDescription>
+            서비스에서 사용되는 기본 프로필 정보를 관리합니다.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex w-full flex-col gap-7">
-            <div className="flex items-center gap-10">
-              <Label
-                htmlFor="avatar"
-                className="flex flex-col items-start gap-2"
-              >
-                <span>프로필 사진</span>
-                <Avatar className="size-24">
+        <CardContent className="space-y-6">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+            <div className="flex flex-col items-center gap-3">
+              <div className="group relative">
+                <Avatar className="border-border size-24 cursor-pointer border-2 transition-opacity group-hover:opacity-80">
                   {avatar ? (
-                    <AvatarImage src={avatar} alt="프로필 이미지" />
+                    <AvatarImage
+                      src={avatar}
+                      alt="프로필 이미지"
+                      className="object-cover"
+                    />
                   ) : null}
-                  <AvatarFallback>
+                  <AvatarFallback className="bg-muted">
                     <UserIcon className="text-muted-foreground size-10" />
                   </AvatarFallback>
                 </Avatar>
-              </Label>
-              <div className="text-muted-foreground flex w-1/2 flex-col gap-2 text-sm">
-                <div className="flex flex-col gap-1">
-                  <span>최대 크기: 1MB</span>
-                  <span>허용 형식: PNG, JPG, GIF</span>
+                <div className="pointer-events-none absolute inset-0 flex cursor-pointer items-center justify-center rounded-full bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Camera className="size-6 text-white" />
                 </div>
                 <Input
                   id="avatar"
                   name="avatar"
                   type="file"
+                  accept="image/*"
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                   onChange={onChangeAvatar}
+                  aria-label="프로필 사진 변경"
                 />
               </div>
+              <p className="text-muted-foreground text-xs">프로필 사진 변경</p>
             </div>
-            <div className="flex flex-col items-start space-y-2">
-              <Label htmlFor="name" className="flex flex-col items-start gap-1">
-                이름
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                required
-                type="text"
-                placeholder="이름을 입력하세요"
-                defaultValue={name}
-              />
-              {fetcher.data &&
-              "fieldErrors" in fetcher.data &&
-              fetcher.data.fieldErrors?.name ? (
-                <FormErrors errors={fetcher.data?.fieldErrors?.name} />
-              ) : null}
+
+            <div className="w-full flex-1 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">이름</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  required
+                  type="text"
+                  placeholder="이름을 입력하세요"
+                  defaultValue={name}
+                  className="max-w-md"
+                />
+                {fetcher.data &&
+                "fieldErrors" in fetcher.data &&
+                fetcher.data.fieldErrors?.name ? (
+                  <FormErrors errors={fetcher.data?.fieldErrors?.name} />
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-muted-foreground text-xs">
+                  이미지 업로드 가이드
+                </Label>
+                <ul className="text-muted-foreground list-inside list-disc space-y-1 text-xs">
+                  <li>최대 크기: 1MB</li>
+                  <li>지원 형식: PNG, JPG, GIF, WEBP</li>
+                </ul>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="marketingConsent"
-                name="marketingConsent"
-                defaultChecked={marketingConsent}
-              />
-              <Label htmlFor="marketingConsent">마케팅 이메일 수신 동의</Label>
-            </div>
-            {fetcher.data &&
-            "fieldErrors" in fetcher.data &&
-            fetcher.data.fieldErrors?.marketingConsent ? (
-              <FormErrors
-                errors={fetcher.data?.fieldErrors?.marketingConsent}
-              />
-            ) : null}
           </div>
+
+          <div className="bg-muted/30 flex items-start space-x-2 rounded-md border p-4">
+            <Checkbox
+              id="marketingConsent"
+              name="marketingConsent"
+              defaultChecked={marketingConsent}
+              className="mt-0.5"
+            />
+            <div className="space-y-1 leading-none">
+              <Label
+                htmlFor="marketingConsent"
+                className="cursor-pointer font-medium"
+              >
+                마케팅 정보 수신 동의
+              </Label>
+              <p className="text-muted-foreground text-sm">
+                이벤트, 프로모션 등 다양한 마케팅 소식을 이메일로
+                받아보시겠습니까?
+              </p>
+            </div>
+          </div>
+          {fetcher.data &&
+          "fieldErrors" in fetcher.data &&
+          fetcher.data.fieldErrors?.marketingConsent ? (
+            <FormErrors errors={fetcher.data?.fieldErrors?.marketingConsent} />
+          ) : null}
         </CardContent>
-        <CardFooter className="flex flex-col gap-4">
-          <FetcherFormButton
-            submitting={fetcher.state === "submitting"}
-            label="프로필 저장"
-            className="w-full"
-          />
+        <CardFooter className="bg-muted/10 flex flex-col gap-4 border-t px-6 py-4 sm:flex-row sm:justify-end">
           {fetcher.data && "success" in fetcher.data && fetcher.data.success ? (
-            <FormSuccess message="프로필이 업데이트되었습니다" />
+            <FormSuccess
+              message="프로필이 저장되었습니다."
+              className="mr-auto w-full sm:w-auto"
+            />
           ) : null}
           {fetcher.data && "error" in fetcher.data && fetcher.data.error ? (
-            <FormErrors errors={[fetcher.data.error]} />
+            <FormErrors
+              errors={[fetcher.data.error]}
+              className="mr-auto w-full sm:w-auto"
+            />
           ) : null}
+
+          <FetcherFormButton
+            submitting={fetcher.state === "submitting"}
+            label="변경사항 저장"
+            className="w-full sm:w-auto"
+            variant="default"
+          />
         </CardFooter>
       </Card>
     </fetcher.Form>

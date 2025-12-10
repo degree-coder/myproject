@@ -131,61 +131,24 @@ export async function loader({ request }: Route.LoaderArgs) {
 
     const workflows = await getUserWorkflows(user.id);
 
-    // 메모 작성자 프로필 조회 (실패해도 워크플로우는 정상 반환)
-    let authorProfiles: Record<string, string> = {};
-    try {
-      const authorIds = new Set<string>();
-      workflows.forEach((workflow: any) => {
-        workflow.steps?.forEach((step: any) => {
-          if (step.notes_author_id) {
-            authorIds.add(step.notes_author_id);
-          }
-        });
-      });
+    return { workflows };
+  } catch (error: unknown) {
+    const err = error as { status?: number; code?: string };
 
-      if (authorIds.size > 0) {
-        const { default: adminClient } = await import(
-          "~/core/lib/supa-admin-client.server"
-        );
-        const { data: profiles } = await adminClient
-          .from("profiles")
-          .select("profile_id, name")
-          .in("profile_id", Array.from(authorIds));
-
-        if (profiles) {
-          authorProfiles = profiles.reduce(
-            (acc: Record<string, string>, p: any) => {
-              acc[p.profile_id] = p.name;
-              return acc;
-            },
-            {},
-          );
-        }
-      }
-    } catch (profileError) {
-      console.warn("[Loader] Failed to fetch author profiles:", profileError);
-      // 프로필 조회 실패해도 워크플로우는 정상 반환
+    // Handle Supabase rate limit error
+    if (err?.status === 429 || err?.code === "over_request_rate_limit") {
+      console.warn("Supabase rate limit reached");
+      return { workflows: [], rateLimitWarning: true };
     }
 
-    return { workflows, authorProfiles };
-  } catch (error: any) {
-    // Handle Supabase rate limit error specifically
-    if (error?.status === 429 || error?.code === "over_request_rate_limit") {
-      console.warn(
-        "Supabase rate limit reached, using cached data if available",
-      );
-      // Return empty workflows instead of redirecting to login
-      return { workflows: [], authorProfiles: {}, rateLimitWarning: true };
-    }
-
-    // For other auth errors, still redirect to login
-    if (error?.status === 401) {
+    // For auth errors, redirect to login
+    if (err?.status === 401) {
       throw new Response("Unauthorized", { status: 401 });
     }
 
     // For other errors, return empty data
     console.error("Loader error:", error);
-    return { workflows: [], authorProfiles: {}, error: true };
+    return { workflows: [], error: true };
   }
 }
 
@@ -215,9 +178,9 @@ export async function action({ request }: Route.ActionArgs) {
         return data({ error: "Invalid step ID" }, { status: 400, headers });
       }
 
-      // DB 업데이트 (작성자 ID 포함)
+      // DB 업데이트
       const { updateStepNotes } = await import("../queries.server");
-      await updateStepNotes(stepId, notes || "", user.id);
+      await updateStepNotes(stepId, notes || "");
 
       return data(
         { success: true, message: "메모가 저장되었습니다" },
@@ -415,8 +378,6 @@ interface LogicStep {
   type: "click" | "input" | "navigate" | "wait" | "decision";
   screenshot_url?: string;
   notes?: string;
-  notes_author_id?: string;
-  notes_updated_at?: string;
 }
 
 // Demo style step component with modern UI and sortable support
@@ -437,7 +398,6 @@ function DemoStyleStep({
   mounted,
   handleUploadScreenshot,
   handleDeleteScreenshot,
-  authorProfiles,
 }: {
   step: LogicStep;
   index: number;
@@ -459,7 +419,6 @@ function DemoStyleStep({
   mounted: boolean;
   handleUploadScreenshot: (stepId: number, file: File) => void;
   handleDeleteScreenshot: (stepId: number) => void;
-  authorProfiles: Record<string, string>;
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
@@ -788,28 +747,6 @@ function DemoStyleStep({
                                 <span className="text-sm font-medium text-indigo-900 dark:text-indigo-100">
                                   추가 설명
                                 </span>
-                                {(step.notes_author_id ||
-                                  step.notes_updated_at) && (
-                                  <span className="text-xs text-indigo-500 dark:text-indigo-400">
-                                    ·{" "}
-                                    {step.notes_author_id &&
-                                    authorProfiles[step.notes_author_id]
-                                      ? `${authorProfiles[step.notes_author_id]}님`
-                                      : ""}
-                                    {step.notes_updated_at && (
-                                      <>
-                                        {" "}
-                                        {new Date(
-                                          step.notes_updated_at,
-                                        ).toLocaleDateString("ko-KR", {
-                                          month: "short",
-                                          day: "numeric",
-                                        })}{" "}
-                                        작성
-                                      </>
-                                    )}
-                                  </span>
-                                )}
                               </div>
                               <Button
                                 variant="ghost"
@@ -869,11 +806,7 @@ function formatDate(date: Date | null | undefined): string {
 }
 
 export default function BusinessLogic({ loaderData }: Route.ComponentProps) {
-  const {
-    workflows: dbWorkflows,
-    authorProfiles = {},
-    rateLimitWarning,
-  } = loaderData;
+  const { workflows: dbWorkflows, rateLimitWarning } = loaderData;
   const fetcher = useFetcher();
   const revalidator = useRevalidator();
   const navigate = useNavigate();
@@ -919,8 +852,6 @@ export default function BusinessLogic({ loaderData }: Route.ComponentProps) {
                 | "decision",
               screenshot_url: step.screenshot_url || undefined,
               notes: step.notes || undefined,
-              notes_author_id: step.notes_author_id || undefined,
-              notes_updated_at: step.notes_updated_at || undefined,
             })),
           teamId: workflow.team_id || undefined,
           teamName: workflow.team?.name || undefined,
@@ -1748,7 +1679,6 @@ export default function BusinessLogic({ loaderData }: Route.ComponentProps) {
                                 mounted={mounted}
                                 handleUploadScreenshot={handleUploadScreenshot}
                                 handleDeleteScreenshot={handleDeleteScreenshot}
-                                authorProfiles={authorProfiles}
                               />
                             ))}
                           </AnimatePresence>

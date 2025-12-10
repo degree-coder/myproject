@@ -12,13 +12,18 @@
  */
 import type { Route } from "./+types/forgot-password";
 
+import { CheckCircle2, KeyRound } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { Form, data } from "react-router";
+import { Form, Link, data } from "react-router";
 import { z } from "zod";
 
 import FormButton from "~/core/components/form-button";
 import FormErrors from "~/core/components/form-error";
-import FormSuccess from "~/core/components/form-success";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "~/core/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -159,25 +164,31 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
     }
   }, [actionData]);
   return (
-    <div className="flex items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-col items-center">
-          <CardTitle className="text-2xl font-semibold">
+    <div className="flex flex-col items-center justify-center gap-4 py-8">
+      <Card className="border-border/50 bg-background/50 w-full max-w-md shadow-lg backdrop-blur-xl transition-all">
+        <CardHeader className="flex flex-col items-center space-y-1 pb-6">
+          <div className="bg-primary/10 mb-2 rounded-full p-3">
+            <KeyRound className="text-primary size-6" />
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight">
             비밀번호 찾기
           </CardTitle>
-          <CardDescription className="text-center text-base">
+          <CardDescription className="text-muted-foreground text-center text-base">
             가입한 이메일을 입력하시면 비밀번호 재설정 링크를 보내드립니다.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid gap-6">
           <Form
-            className="flex w-full flex-col gap-5"
+            className="flex w-full flex-col gap-4"
             method="post"
             ref={formRef}
           >
-            <div className="flex flex-col items-start space-y-2">
-              <Label htmlFor="name" className="flex flex-col items-start gap-1">
-                이메일 (Email)
+            <div className="space-y-2">
+              <Label
+                htmlFor="email"
+                className="text-sm leading-none font-medium"
+              >
+                이메일
               </Label>
               <Input
                 id="email"
@@ -185,6 +196,7 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
                 required
                 type="email"
                 placeholder="name@example.com"
+                className="bg-background"
               />
               {actionData &&
               "fieldErrors" in actionData &&
@@ -192,18 +204,41 @@ export default function ForgotPassword({ actionData }: Route.ComponentProps) {
                 <FormErrors errors={actionData.fieldErrors.email} />
               ) : null}
             </div>
-            <FormButton label="재설정 링크 보내기" className="w-full" />
+
+            <FormButton
+              label="재설정 링크 보내기"
+              className="w-full font-semibold"
+            />
+
             {actionData && "error" in actionData && actionData.error ? (
               <FormErrors errors={[actionData.error]} />
             ) : null}
+
             {actionData &&
             "success" in actionData &&
             actionData.success === true ? (
-              <FormSuccess message="이메일로 재설정 링크가 발송되었습니다. 메일함을 확인해주세요." />
+              <Alert className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-400">
+                <CheckCircle2 className="size-4" />
+                <AlertTitle>발송 완료</AlertTitle>
+                <AlertDescription>
+                  이메일로 재설정 링크가 발송되었습니다. 메일함을 확인해주세요.
+                </AlertDescription>
+              </Alert>
             ) : null}
           </Form>
         </CardContent>
       </Card>
+      <div className="flex flex-col items-center justify-center text-sm">
+        <p>
+          <Link
+            to="/login"
+            viewTransition
+            className="text-primary hover:text-primary/80 font-medium hover:underline"
+          >
+            로그인 페이지로 돌아가기
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

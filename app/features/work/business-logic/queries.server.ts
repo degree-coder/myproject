@@ -168,20 +168,15 @@ export async function getWorkflowSteps(workflowId: number) {
 }
 
 /**
- * Update a step's notes with author info
+ * Update a step's notes
  */
 export async function updateStepNotes(
   stepId: number,
   notes: string,
-  authorId: string,
 ): Promise<void> {
   await db
     .update(workAnalysisSteps)
-    .set({
-      notes,
-      notes_author_id: authorId,
-      notes_updated_at: new Date(),
-    })
+    .set({ notes })
     .where(eq(workAnalysisSteps.step_id, stepId));
 }
 

@@ -13,7 +13,7 @@
  */
 import type { Route } from "./+types/join";
 
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, UserPlus, XCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Form, Link, data, redirect, useNavigation } from "react-router";
 import { z } from "zod";
@@ -64,16 +64,14 @@ function PasswordRequirementIndicator({
 }) {
   return (
     <div
-      className={`flex items-center gap-1.5 text-xs ${
-        met
-          ? "text-green-600 dark:text-green-400"
-          : "text-slate-500 dark:text-slate-400"
+      className={`flex items-center gap-1.5 text-xs transition-colors ${
+        met ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
       }`}
     >
       {met ? (
-        <CheckCircle2 className="size-3.5 text-green-600 dark:text-green-400" />
+        <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
       ) : (
-        <XCircle className="size-3.5 text-slate-400 dark:text-slate-500" />
+        <XCircle className="text-muted-foreground/50 size-3.5" />
       )}
       <span>{label}</span>
     </div>
@@ -279,20 +277,29 @@ export default function Join({ actionData }: Route.ComponentProps) {
   const canSubmit = allRequirementsMet && passwordsMatch;
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-col items-center">
-          <CardTitle className="text-2xl font-semibold" role="heading">
+    <div className="flex flex-col items-center justify-center gap-4 py-8">
+      <Card className="border-border/50 bg-background/50 w-full max-w-md shadow-lg backdrop-blur-xl transition-all">
+        <CardHeader className="flex flex-col items-center space-y-1 pb-6">
+          <div className="bg-primary/10 mb-2 rounded-full p-3">
+            <UserPlus className="text-primary size-6" />
+          </div>
+          <CardTitle
+            className="text-2xl font-bold tracking-tight"
+            role="heading"
+          >
             계정 생성
           </CardTitle>
-          <CardDescription className="text-base">
-            계정 생성을 위해 정보를 입력해주세요
+          <CardDescription className="text-muted-foreground text-base">
+            정보를 입력하여 서비스를 시작하세요
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <Form className="flex w-full flex-col gap-5" method="post">
-            <div className="flex flex-col items-start space-y-2">
-              <Label htmlFor="name" className="flex flex-col items-start gap-1">
+        <CardContent className="grid gap-6">
+          <Form className="flex w-full flex-col gap-4" method="post">
+            <div className="space-y-2">
+              <Label
+                htmlFor="name"
+                className="text-sm leading-none font-medium"
+              >
                 이름
               </Label>
               <Input
@@ -300,7 +307,8 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 name="name"
                 required
                 type="text"
-                placeholder="Name"
+                placeholder="홍길동"
+                className="bg-background"
               />
               {actionData &&
               "fieldErrors" in actionData &&
@@ -308,10 +316,10 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 <FormErrors errors={actionData.fieldErrors.name} />
               ) : null}
             </div>
-            <div className="flex flex-col items-start space-y-2">
+            <div className="space-y-2">
               <Label
                 htmlFor="email"
-                className="flex flex-col items-start gap-1"
+                className="text-sm leading-none font-medium"
               >
                 이메일
               </Label>
@@ -320,7 +328,8 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 name="email"
                 required
                 type="email"
-                placeholder="test@test.com"
+                placeholder="user@example.com"
+                className="bg-background"
               />
               {actionData &&
               "fieldErrors" in actionData &&
@@ -328,10 +337,10 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 <FormErrors errors={actionData.fieldErrors.email} />
               ) : null}
             </div>
-            <div className="flex flex-col items-start space-y-2">
+            <div className="space-y-2">
               <Label
                 htmlFor="password"
-                className="flex flex-col items-start gap-1"
+                className="text-sm leading-none font-medium"
               >
                 비밀번호
               </Label>
@@ -340,18 +349,19 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 name="password"
                 required
                 type="password"
-                placeholder="비밀번호를 입력해주세요"
+                placeholder="비밀번호 설정"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onFocus={() => setShowRequirements(true)}
+                className="bg-background"
               />
               {/* Condensed one-line warning message */}
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                8자 이상, 영문 대/소문자, 숫자, 특수문자 각 1개 이상 포함
+              <p className="text-muted-foreground/80 text-[11px]">
+                8자 이상, 영문 대/소문자, 숫자, 특수문자 각 1개 이상 필요
               </p>
               {/* Real-time validation feedback */}
               {showRequirements && password.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
+                <div className="bg-muted/50 mt-2 flex flex-wrap gap-x-4 gap-y-1.5 rounded-md p-2">
                   {requirementStatus.map((req) => (
                     <PasswordRequirementIndicator
                       key={req.id}
@@ -367,10 +377,10 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 <FormErrors errors={actionData.fieldErrors.password} />
               ) : null}
             </div>
-            <div className="flex flex-col items-start space-y-2">
+            <div className="space-y-2">
               <Label
                 htmlFor="confirmPassword"
-                className="flex flex-col items-start gap-1"
+                className="text-sm leading-none font-medium"
               >
                 비밀번호 확인
               </Label>
@@ -379,17 +389,18 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 name="confirmPassword"
                 required
                 type="password"
-                placeholder="비밀번호를 다시 입력해주세요"
+                placeholder="비밀번호 재입력"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                className="bg-background"
               />
               {/* Password match indicator */}
               {confirmPassword.length > 0 && (
                 <div
-                  className={`flex items-center gap-1.5 text-xs ${
+                  className={`flex items-center gap-1.5 text-xs transition-colors ${
                     passwordsMatch
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-500 dark:text-red-400"
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-destructive"
                   }`}
                 >
                   {passwordsMatch ? (
@@ -411,46 +422,68 @@ export default function Join({ actionData }: Route.ComponentProps) {
                 <FormErrors errors={actionData.fieldErrors.confirmPassword} />
               ) : null}
             </div>
+
+            <div className="space-y-3 rounded-md border p-4">
+              <div className="flex items-start gap-2">
+                <Checkbox id="marketing" name="marketing" className="mt-0.5" />
+                <Label
+                  htmlFor="marketing"
+                  className="text-muted-foreground text-sm leading-snug font-normal"
+                >
+                  (선택) 마케팅 이메일 및 프로모션 정보 수신에 동의합니다.
+                </Label>
+              </div>
+              <div className="flex items-start gap-2">
+                <Checkbox id="terms" name="terms" checked className="mt-0.5" />
+                <Label
+                  htmlFor="terms"
+                  className="text-muted-foreground text-sm leading-snug font-normal"
+                >
+                  <span className="text-destructive">*</span>
+                  <span>
+                    {" "}
+                    <Link
+                      to="/legal/terms-of-service"
+                      viewTransition
+                      className="text-foreground hover:text-primary font-medium underline transition-colors"
+                    >
+                      이용약관
+                    </Link>
+                    과{" "}
+                    <Link
+                      to="/legal/privacy-policy"
+                      viewTransition
+                      className="text-foreground hover:text-primary font-medium underline transition-colors"
+                    >
+                      개인정보처리방침
+                    </Link>
+                    을 읽었으며 이에 동의합니다.
+                  </span>
+                </Label>
+              </div>
+            </div>
+
             <FormButton
               label="계정 생성"
-              className="w-full"
+              className="w-full font-semibold"
               disabled={!canSubmit || isSubmitting}
             />
             {actionData && "error" in actionData && actionData.error ? (
               <FormErrors errors={[actionData.error]} />
             ) : null}
-
-            <div className="flex items-center gap-2">
-              <Checkbox id="marketing" name="marketing" />
-              <Label htmlFor="marketing" className="text-muted-foreground">
-                마케팅 이메일 수신에 동의합니다.
-              </Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox id="terms" name="terms" checked />
-              <Label htmlFor="terms" className="text-muted-foreground">
-                <span>
-                  {" "}
-                  <Link
-                    to="/legal/terms-of-service"
-                    viewTransition
-                    className="text-muted-foreground text-underline hover:text-foreground underline transition-colors"
-                  >
-                    이용약관
-                  </Link>
-                  과{" "}
-                  <Link
-                    to="/legal/privacy-policy"
-                    viewTransition
-                    className="text-muted-foreground hover:text-foreground text-underline underline transition-colors"
-                  >
-                    개인정보처리방침
-                  </Link>
-                  을 읽었으며 동의합니다.
-                </span>
-              </Label>
-            </div>
           </Form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background text-muted-foreground px-2">
+                또는
+              </span>
+            </div>
+          </div>
+
           <SignUpButtons />
         </CardContent>
       </Card>
@@ -461,7 +494,7 @@ export default function Join({ actionData }: Route.ComponentProps) {
             to="/login"
             viewTransition
             data-testid="form-signin-link"
-            className="text-muted-foreground hover:text-foreground text-underline underline transition-colors"
+            className="text-primary hover:text-primary/80 font-medium hover:underline"
           >
             로그인
           </Link>

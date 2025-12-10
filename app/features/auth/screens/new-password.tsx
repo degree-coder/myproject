@@ -12,14 +12,19 @@
  */
 import type { Route } from "./+types/new-password";
 
-import { CheckCircle2Icon } from "lucide-react";
+import { CheckCircle2, CheckCircle2Icon, KeyRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { redirect, useNavigate } from "react-router";
+import { Link, redirect, useNavigate } from "react-router";
 import { Form, data, useLoaderData } from "react-router";
 import { z } from "zod";
 
 import FormButton from "~/core/components/form-button";
 import FormErrors from "~/core/components/form-error";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "~/core/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -148,25 +153,31 @@ export default function ChangePassword({ actionData }: Route.ComponentProps) {
   };
 
   return (
-    <div className="flex h-screen items-center justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-col items-center">
-          <CardTitle className="text-2xl font-semibold">
+    <div className="flex flex-col items-center justify-center gap-4 py-8">
+      <Card className="border-border/50 bg-background/50 w-full max-w-md shadow-lg backdrop-blur-xl transition-all">
+        <CardHeader className="flex flex-col items-center space-y-1 pb-6">
+          <div className="bg-primary/10 mb-2 rounded-full p-3">
+            <KeyRound className="text-primary size-6" />
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight">
             비밀번호 변경
           </CardTitle>
-          <CardDescription className="text-center text-base">
-            새로운 비밀번호를 입력해주세요.
+          <CardDescription className="text-muted-foreground text-center text-base">
+            새로운 비밀번호를 입력해주세요
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid gap-6">
           <form
             className="flex w-full flex-col gap-4"
             onSubmit={handleSubmit}
             ref={formRef}
           >
-            <div className="flex flex-col items-start space-y-2">
-              <Label htmlFor="name" className="flex flex-col items-start gap-1">
-                새 비밀번호 (New Password)
+            <div className="space-y-2">
+              <Label
+                htmlFor="password"
+                className="text-sm leading-none font-medium"
+              >
+                새 비밀번호
               </Label>
               <Input
                 id="password"
@@ -174,11 +185,15 @@ export default function ChangePassword({ actionData }: Route.ComponentProps) {
                 required
                 type="password"
                 placeholder="새 비밀번호 입력"
+                className="bg-background"
               />
             </div>
-            <div className="flex flex-col items-start space-y-2">
-              <Label htmlFor="name" className="flex flex-col items-start gap-1">
-                비밀번호 확인 (Confirm Password)
+            <div className="space-y-2">
+              <Label
+                htmlFor="confirmPassword"
+                className="text-sm leading-none font-medium"
+              >
+                비밀번호 확인
               </Label>
               <Input
                 id="confirmPassword"
@@ -186,19 +201,43 @@ export default function ChangePassword({ actionData }: Route.ComponentProps) {
                 required
                 type="password"
                 placeholder="비밀번호 재입력"
+                className="bg-background"
               />
             </div>
-            <FormButton label="비밀번호 변경하기" isLoading={isLoading} />
+
+            <FormButton
+              label="비밀번호 변경하기"
+              isLoading={isLoading}
+              className="w-full font-semibold"
+            />
+
             {error ? <FormErrors errors={[error]} /> : null}
+
             {success ? (
-              <div className="flex items-center justify-center gap-2 text-sm text-green-500">
-                <CheckCircle2Icon className="size-4" />
-                <p>비밀번호가 성공적으로 변경되었습니다.</p>
-              </div>
+              <Alert className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-400">
+                <CheckCircle2 className="size-4" />
+                <AlertTitle>변경 완료</AlertTitle>
+                <AlertDescription>
+                  비밀번호가 성공적으로 변경되었습니다. 잠시 후 로그인 페이지로
+                  이동합니다.
+                </AlertDescription>
+              </Alert>
             ) : null}
           </form>
         </CardContent>
       </Card>
+
+      <div className="flex flex-col items-center justify-center text-sm">
+        <p>
+          <Link
+            to="/login"
+            viewTransition
+            className="text-primary hover:text-primary/80 font-medium hover:underline"
+          >
+            로그인 페이지로 돌아가기
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

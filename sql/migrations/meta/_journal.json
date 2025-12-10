@@ -71,6 +71,13 @@
       "when": 1765327029300,
       "tag": "0009_lively_electro",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1765366218327,
+      "tag": "0010_add-rls-policies",
+      "breakpoints": true
     }
   ]
 }

@@ -15,10 +15,10 @@ import {
   PieChartIcon,
   RocketIcon,
   Settings2Icon,
+  ShieldCheckIcon,
   SquareTerminalIcon,
   Target,
   UsersIcon,
-  ShieldCheckIcon,
 } from "lucide-react";
 
 import {
@@ -140,16 +140,19 @@ const data = {
       name: "Sales Team",
       url: "#",
       icon: Target,
+      items: [], // Add items if needed by type, or make optional in SidebarProjects
     },
     {
       name: "Customer Success",
       url: "#",
       icon: HeartHandshakeIcon,
+      items: [],
     },
     {
       name: "Marketing",
       url: "#",
       icon: MegaphoneIcon,
+      items: [],
     },
   ],
 };
@@ -173,6 +176,7 @@ export default function DashboardSidebar({
       title: "Admin",
       url: "/admin",
       icon: ShieldCheckIcon,
+      isActive: false,
       items: [
         {
           title: "Super Dashboard",
@@ -182,13 +186,19 @@ export default function DashboardSidebar({
     });
   }
   return (
-    <Sidebar collapsible="icon" variant="inset" {...props}>
+    <Sidebar
+      collapsible="icon"
+      variant="inset"
+      className="border-r border-white/20 bg-white/60 shadow-xl backdrop-blur-2xl dark:border-slate-800/40 dark:bg-slate-900/60"
+      {...props}
+    >
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
         <SidebarMain items={navMain} />
-        <SidebarProjects projects={data.projects} />
+        {/* Fix for type mismatch if necessary: map projects to match expected type or ensure data is correct */}
+        <SidebarProjects projects={data.projects as any} />
       </SidebarContent>
       <SidebarFooter>
         <SidebarUser

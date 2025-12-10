@@ -4,7 +4,6 @@ import {
   AlertCircle,
   ArrowRight,
   CheckCircle2,
-  FileVideo,
   Film,
   Loader2,
   Sparkles,
@@ -315,7 +314,7 @@ export default function Upload() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] w-full bg-slate-50/50 p-6 dark:bg-slate-950/50">
+    <div className="flex w-full flex-col bg-slate-50/50 p-6 dark:bg-slate-950/50">
       <div className="container mx-auto max-w-5xl">
         {/* Header Section */}
         <motion.div
@@ -326,10 +325,10 @@ export default function Upload() {
           <div className="mb-4 inline-flex items-center justify-center rounded-full bg-indigo-100 p-3 dark:bg-indigo-900/30">
             <Sparkles className="size-6 text-indigo-600 dark:text-indigo-400" />
           </div>
-          <h1 className="mb-3 text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+          <h1 className="text-foreground mb-3 text-4xl font-bold tracking-tight">
             AI Video Analysis
           </h1>
-          <p className="mx-auto max-w-2xl text-lg text-slate-600 dark:text-slate-400">
+          <p className="text-muted-foreground mx-auto max-w-2xl text-lg">
             동영상을 업로드하면 AI가 업무 프로세스를 자동으로 분석합니다.
             <br className="hidden sm:block" />
             빠르고 정확한 자동화 분석을 경험해보세요.
@@ -345,7 +344,7 @@ export default function Upload() {
               exit={{ opacity: 0, height: 0 }}
               className="mb-8 overflow-hidden"
             >
-              <div className="rounded-2xl border border-orange-200 bg-orange-50/80 p-6 backdrop-blur-sm dark:border-orange-900/50 dark:bg-orange-950/30">
+              <div className="rounded-2xl border border-orange-200/50 bg-orange-50/50 p-6 backdrop-blur-sm dark:border-orange-900/50 dark:bg-orange-950/30">
                 <div className="flex items-start gap-4">
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/50">
                     <AlertCircle className="size-5 text-orange-600 dark:text-orange-400" />
@@ -396,10 +395,10 @@ export default function Upload() {
                   onDrop={isRateLimited ? undefined : handleDrop}
                   className={`group relative overflow-hidden rounded-3xl border-2 border-dashed transition-all duration-500 ${
                     isRateLimited
-                      ? "cursor-not-allowed border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50"
+                      ? "border-muted bg-muted/50 cursor-not-allowed"
                       : isDragging
                         ? "scale-[1.02] border-indigo-500 bg-indigo-50/50 shadow-2xl shadow-indigo-500/10 dark:border-indigo-400 dark:bg-indigo-950/20"
-                        : "border-slate-300 bg-white/50 hover:border-indigo-400 hover:bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/50 dark:hover:border-indigo-500/50 dark:hover:bg-slate-800/50"
+                        : "border-border/50 bg-background/50 hover:border-indigo-400 hover:bg-slate-50/80 dark:hover:border-indigo-500/50 dark:hover:bg-slate-800/50"
                   }`}
                 >
                   <div className="flex min-h-[400px] flex-col items-center justify-center p-12 text-center">
@@ -411,19 +410,19 @@ export default function Upload() {
                         className={`flex size-24 items-center justify-center rounded-full transition-all duration-300 ${
                           isDragging
                             ? "bg-indigo-100 text-indigo-600 dark:bg-indigo-900 dark:text-indigo-300"
-                            : "bg-slate-100 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-500 dark:bg-slate-800 dark:text-slate-500 dark:group-hover:bg-indigo-900/30 dark:group-hover:text-indigo-400"
+                            : "bg-muted text-muted-foreground group-hover:bg-indigo-50 group-hover:text-indigo-500 dark:group-hover:bg-indigo-900/30 dark:group-hover:text-indigo-400"
                         }`}
                       >
                         <UploadIcon className="size-10" />
                       </div>
                     </div>
 
-                    <h3 className="mb-3 text-2xl font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-foreground mb-3 text-2xl font-bold">
                       {isRateLimited
                         ? "사용량 초과"
                         : "동영상 파일을 올려주세요"}
                     </h3>
-                    <p className="mb-8 max-w-md text-slate-500 dark:text-slate-400">
+                    <p className="text-muted-foreground mb-8 max-w-md">
                       {isRateLimited
                         ? "오늘 사용 가능한 분석 횟수를 모두 소진했습니다."
                         : "MP4, MOV, AVI, WebM 지원. 최대 파일 크기 50MB."}
@@ -450,7 +449,7 @@ export default function Upload() {
                           />
                         </label>
                         {rateLimitStatus && (
-                          <p className="text-xs font-medium text-slate-400">
+                          <p className="text-muted-foreground text-xs font-medium">
                             오늘 사용량: {rateLimitStatus.currentCount}/
                             {rateLimitStatus.maxDailyRequests}
                           </p>
@@ -504,7 +503,7 @@ export default function Upload() {
                   {/* Right: Controls & Progress */}
                   <div className="flex flex-col p-8 lg:p-12">
                     <div className="mb-8 flex items-center justify-between">
-                      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                      <h2 className="text-foreground text-2xl font-bold">
                         처리 상태 (Processing Status)
                       </h2>
                       {videoFile.status !== "uploading" &&
@@ -562,7 +561,7 @@ export default function Upload() {
                                   ? "업로드 중..."
                                   : "분석 중..."}
                               </span>
-                              <span className="text-slate-500">
+                              <span className="text-muted-foreground">
                                 {videoFile.progress}%
                               </span>
                             </div>
@@ -575,7 +574,7 @@ export default function Upload() {
 
                         {/* Error Message */}
                         {videoFile.status === "error" && (
-                          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
+                          <div className="border-destructive/20 bg-destructive/5 text-destructive rounded-xl border p-4">
                             <div className="flex items-center gap-2 font-medium">
                               <AlertCircle className="size-4" />
                               업로드 실패
@@ -602,7 +601,7 @@ export default function Upload() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="mt-8 border-t border-slate-100 pt-8 dark:border-slate-800">
+                    <div className="border-border/50 mt-8 border-t pt-8">
                       {videoFile.status === "idle" && (
                         <div className="flex gap-3">
                           <Button
@@ -617,7 +616,7 @@ export default function Upload() {
                             variant="outline"
                             size="lg"
                             onClick={handleRemove}
-                            className="rounded-xl border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                            className="border-border hover:bg-muted rounded-xl"
                           >
                             취소
                           </Button>
@@ -632,7 +631,7 @@ export default function Upload() {
                               window.location.href = videoFile.resultUrl;
                             }
                           }}
-                          className="w-full rounded-xl bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400"
+                          className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
                         >
                           결과 확인하기 (View Results)
                           <ArrowRight className="ml-2 size-4" />
@@ -686,7 +685,7 @@ function StatusStep({
               ? "border-indigo-600 bg-indigo-600 text-white dark:border-indigo-500 dark:bg-indigo-500"
               : active
                 ? "border-indigo-600 bg-white text-indigo-600 dark:border-indigo-500 dark:bg-slate-900 dark:text-indigo-500"
-                : "border-slate-200 bg-slate-50 text-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-600"
+                : "border-muted bg-muted text-muted-foreground"
           }`}
         >
           {completed ? (
@@ -700,9 +699,7 @@ function StatusStep({
         {step !== "completed" && (
           <div
             className={`my-2 h-full w-0.5 ${
-              completed
-                ? "bg-indigo-600 dark:bg-indigo-500"
-                : "bg-slate-200 dark:bg-slate-800"
+              completed ? "bg-indigo-600 dark:bg-indigo-500" : "bg-border"
             }`}
           />
         )}
@@ -710,12 +707,8 @@ function StatusStep({
       <div
         className={`pb-6 ${active || completed ? "opacity-100" : "opacity-50"}`}
       >
-        <h4 className="font-semibold text-slate-900 dark:text-slate-100">
-          {label}
-        </h4>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          {description}
-        </p>
+        <h4 className="text-foreground font-semibold">{label}</h4>
+        <p className="text-muted-foreground text-sm">{description}</p>
       </div>
     </div>
   );

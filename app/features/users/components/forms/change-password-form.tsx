@@ -48,16 +48,16 @@ function PasswordRequirementIndicator({
 }) {
   return (
     <div
-      className={`flex items-center gap-1.5 text-xs ${
+      className={`flex items-center gap-1.5 text-xs transition-colors ${
         met
-          ? "text-green-600 dark:text-green-400"
-          : "text-slate-500 dark:text-slate-400"
+          ? "text-emerald-600 dark:text-emerald-400"
+          : "text-muted-foreground/60"
       }`}
     >
       {met ? (
-        <CheckCircle2 className="size-3.5 text-green-600 dark:text-green-400" />
+        <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
       ) : (
-        <XCircle className="size-3.5 text-slate-400 dark:text-slate-500" />
+        <XCircle className="size-3.5" />
       )}
       <span>{label}</span>
     </div>
@@ -117,10 +117,10 @@ export default function ChangePasswordForm({
     <fetcher.Form
       ref={formRef}
       method="post"
-      className="w-full max-w-screen-md"
+      className="w-full"
       action="/api/users/password"
     >
-      <Card className="overflow-hidden rounded-2xl border border-white/20 bg-white/40 shadow-xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/40">
+      <Card>
         <CardHeader>
           <CardTitle>
             {hasPassword ? "비밀번호 변경" : "비밀번호 설정"}
@@ -137,147 +137,146 @@ export default function ChangePasswordForm({
           name="hasExistingPassword"
           value={hasPassword.toString()}
         />
-        <CardContent>
-          <div className="flex w-full flex-col gap-7">
-            {/* Current password field - only shown if user has existing password */}
-            {hasPassword && (
-              <div className="flex flex-col items-start space-y-2">
-                <Label
-                  htmlFor="currentPassword"
-                  className="flex flex-col items-start gap-1"
-                >
-                  현재 비밀번호
-                </Label>
+        <CardContent className="space-y-6">
+          <div className="flex w-full flex-col gap-6 sm:flex-row sm:items-start">
+            <div className="w-full flex-1 space-y-4">
+              {/* Current password field - only shown if user has existing password */}
+              {hasPassword && (
+                <div className="space-y-2">
+                  <Label htmlFor="currentPassword">현재 비밀번호</Label>
+                  <Input
+                    id="currentPassword"
+                    name="currentPassword"
+                    required
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="현재 비밀번호를 입력하세요"
+                    className="max-w-md"
+                  />
+                  {fetcher.data &&
+                  "fieldErrors" in fetcher.data &&
+                  (fetcher.data.fieldErrors as Record<string, string[]>)
+                    ?.currentPassword ? (
+                    <FormErrors
+                      errors={
+                        (fetcher.data.fieldErrors as Record<string, string[]>)
+                          .currentPassword
+                      }
+                    />
+                  ) : null}
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="password">새 비밀번호</Label>
                 <Input
-                  id="currentPassword"
-                  name="currentPassword"
+                  id="password"
+                  name="password"
                   required
                   type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="현재 비밀번호를 입력하세요"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setShowRequirements(true)}
+                  className="max-w-md"
                 />
+                {/* Condensed one-line warning message */}
+                <p className="text-muted-foreground/80 text-[11px]">
+                  8자 이상, 영문 대/소문자, 숫자, 특수문자 각 1개 이상 포함
+                </p>
+                {/* Real-time validation feedback */}
+                {showRequirements && password.length > 0 && (
+                  <div className="bg-muted/50 mt-2 flex max-w-md flex-wrap gap-x-4 gap-y-1.5 rounded-md p-2">
+                    {requirementStatus.map((req) => (
+                      <PasswordRequirementIndicator
+                        key={req.id}
+                        met={req.met}
+                        label={req.label}
+                      />
+                    ))}
+                  </div>
+                )}
                 {fetcher.data &&
                 "fieldErrors" in fetcher.data &&
                 (fetcher.data.fieldErrors as Record<string, string[]>)
-                  ?.currentPassword ? (
+                  ?.password ? (
                   <FormErrors
                     errors={
                       (fetcher.data.fieldErrors as Record<string, string[]>)
-                        .currentPassword
+                        .password
                     }
                   />
                 ) : null}
               </div>
-            )}
-            <div className="flex flex-col items-start space-y-2">
-              <Label
-                htmlFor="password"
-                className="flex flex-col items-start gap-1"
-              >
-                새 비밀번호
-              </Label>
-              <Input
-                id="password"
-                name="password"
-                required
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onFocus={() => setShowRequirements(true)}
-              />
-              {/* Condensed one-line warning message */}
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                8자 이상, 영문 대/소문자, 숫자, 특수문자 각 1개 이상 포함
-              </p>
-              {/* Real-time validation feedback */}
-              {showRequirements && password.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1.5">
-                  {requirementStatus.map((req) => (
-                    <PasswordRequirementIndicator
-                      key={req.id}
-                      met={req.met}
-                      label={req.label}
-                    />
-                  ))}
-                </div>
-              )}
-              {fetcher.data &&
-              "fieldErrors" in fetcher.data &&
-              (fetcher.data.fieldErrors as Record<string, string[]>)
-                ?.password ? (
-                <FormErrors
-                  errors={
-                    (fetcher.data.fieldErrors as Record<string, string[]>)
-                      .password
-                  }
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">새 비밀번호 확인</Label>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  required
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="max-w-md"
                 />
-              ) : null}
-            </div>
-            <div className="flex flex-col items-start space-y-2">
-              <Label
-                htmlFor="confirmPassword"
-                className="flex flex-col items-start gap-1"
-              >
-                새 비밀번호 확인
-              </Label>
-              <Input
-                id="confirmPassword"
-                name="confirmPassword"
-                required
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-              {/* Password match indicator */}
-              {confirmPassword.length > 0 && (
-                <div
-                  className={`flex items-center gap-1.5 text-xs ${
-                    passwordsMatch
-                      ? "text-green-600 dark:text-green-400"
-                      : "text-red-500 dark:text-red-400"
-                  }`}
-                >
-                  {passwordsMatch ? (
-                    <>
-                      <CheckCircle2 className="size-3.5" />
-                      <span>비밀번호가 일치합니다</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="size-3.5" />
-                      <span>비밀번호가 일치하지 않습니다</span>
-                    </>
-                  )}
-                </div>
-              )}
-              {fetcher.data &&
-              "fieldErrors" in fetcher.data &&
-              (fetcher.data.fieldErrors as Record<string, string[]>)
-                ?.confirmPassword ? (
-                <FormErrors
-                  errors={
-                    (fetcher.data.fieldErrors as Record<string, string[]>)
-                      .confirmPassword
-                  }
-                />
-              ) : null}
+                {/* Password match indicator */}
+                {confirmPassword.length > 0 && (
+                  <div
+                    className={`flex items-center gap-1.5 text-xs transition-colors ${
+                      passwordsMatch
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-destructive"
+                    }`}
+                  >
+                    {passwordsMatch ? (
+                      <>
+                        <CheckCircle2 className="size-3.5" />
+                        <span>비밀번호가 일치합니다</span>
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="size-3.5" />
+                        <span>비밀번호가 일치하지 않습니다</span>
+                      </>
+                    )}
+                  </div>
+                )}
+                {fetcher.data &&
+                "fieldErrors" in fetcher.data &&
+                (fetcher.data.fieldErrors as Record<string, string[]>)
+                  ?.confirmPassword ? (
+                  <FormErrors
+                    errors={
+                      (fetcher.data.fieldErrors as Record<string, string[]>)
+                        .confirmPassword
+                    }
+                  />
+                ) : null}
+              </div>
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-4">
+        <CardFooter className="bg-muted/10 flex flex-col gap-4 border-t px-6 py-4 sm:flex-row sm:justify-end">
+          {fetcher.data && "success" in fetcher.data && fetcher.data.success ? (
+            <FormSuccess
+              message="비밀번호가 변경되었습니다"
+              className="mr-auto w-full sm:w-auto"
+            />
+          ) : null}
+          {fetcher.data && "error" in fetcher.data && fetcher.data.error ? (
+            <FormErrors
+              errors={[fetcher.data.error]}
+              className="mr-auto w-full sm:w-auto"
+            />
+          ) : null}
+
           <FetcherFormButton
             label={hasPassword ? "비밀번호 변경" : "비밀번호 설정"}
-            className="w-full"
+            className="w-full sm:w-auto"
             submitting={fetcher.state === "submitting"}
             disabled={!canSubmit || fetcher.state === "submitting"}
           />
-          {fetcher.data && "success" in fetcher.data && fetcher.data.success ? (
-            <FormSuccess message="비밀번호가 변경되었습니다" />
-          ) : null}
-          {fetcher.data && "error" in fetcher.data && fetcher.data.error ? (
-            <FormErrors errors={[fetcher.data.error]} />
-          ) : null}
         </CardFooter>
       </Card>
     </fetcher.Form>

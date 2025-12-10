@@ -172,50 +172,49 @@ export default function Login({
     });
   };
   return (
-    <div className="flex flex-col items-center justify-center gap-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-col items-center">
-          <CardTitle className="text-2xl font-semibold">로그인</CardTitle>
-          <CardDescription className="text-base">
+    <div className="flex flex-col items-center justify-center gap-4 py-8">
+      <Card className="border-border/50 bg-background/50 w-full max-w-md shadow-lg backdrop-blur-xl transition-all">
+        <CardHeader className="flex flex-col items-center space-y-1 pb-6">
+          <div className="bg-primary/10 mb-2 rounded-full p-3">
+            <KeyIcon className="text-primary size-6" />
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            로그인
+          </CardTitle>
+          <CardDescription className="text-muted-foreground text-base">
             계정 정보를 입력해주세요
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
+        <CardContent className="grid gap-6">
           {/* Success message for signup completion */}
           {loaderData?.message === "signup_success" && (
-            <Alert className="bg-green-600/20 text-green-700 dark:bg-green-950/20 dark:text-green-600">
-              <CheckCircle2Icon
-                className="size-4"
-                color="oklch(0.627 0.194 149.214)"
-              />
+            <Alert className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-400">
+              <CheckCircle2Icon className="size-4" />
               <AlertTitle>회원가입 완료!</AlertTitle>
-              <AlertDescription className="text-green-700 dark:text-green-600">
+              <AlertDescription>
                 계정 생성이 완료되었습니다. 이메일을 확인한 후 로그인해주세요.
               </AlertDescription>
             </Alert>
           )}
           {/* Success message for email verification */}
           {loaderData?.message === "email_verified" && (
-            <Alert className="bg-green-600/20 text-green-700 dark:bg-green-950/20 dark:text-green-600">
-              <CheckCircle2Icon
-                className="size-4"
-                color="oklch(0.627 0.194 149.214)"
-              />
+            <Alert className="border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-400">
+              <CheckCircle2Icon className="size-4" />
               <AlertTitle>이메일 인증 완료!</AlertTitle>
-              <AlertDescription className="text-green-700 dark:text-green-600">
+              <AlertDescription>
                 이메일 인증이 성공적으로 완료되었습니다. 이제 로그인해주세요.
               </AlertDescription>
             </Alert>
           )}
           <Form
-            className="flex w-full flex-col gap-5"
+            className="flex w-full flex-col gap-4"
             method="post"
             ref={formRef}
           >
-            <div className="flex flex-col items-start space-y-2">
+            <div className="space-y-2">
               <Label
                 htmlFor="email"
-                className="flex flex-col items-start gap-1"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 이메일
               </Label>
@@ -224,7 +223,8 @@ export default function Login({
                 name="email"
                 required
                 type="email"
-                placeholder="test1234@test.com"
+                placeholder="email@example.com"
+                className="bg-background"
               />
               {actionData &&
               "fieldErrors" in actionData &&
@@ -232,21 +232,21 @@ export default function Login({
                 <FormErrors errors={actionData.fieldErrors.email} />
               ) : null}
             </div>
-            <div className="flex flex-col items-start space-y-2">
+            <div className="space-y-2">
               <div className="flex w-full items-center justify-between">
                 <Label
                   htmlFor="password"
-                  className="flex flex-col items-start gap-1"
+                  className="text-sm leading-none font-medium"
                 >
                   비밀번호
                 </Label>
                 <Link
                   to="/auth/forgot-password/reset"
-                  className="text-muted-foreground text-underline hover:text-foreground self-end text-sm underline transition-colors"
+                  className="text-primary hover:text-primary/80 text-xs font-medium hover:underline"
                   tabIndex={-1}
                   viewTransition
                 >
-                  비밀번호를 잊으셨나요?
+                  비밀번호 찾기
                 </Link>
               </div>
               <Input
@@ -255,6 +255,7 @@ export default function Login({
                 required
                 type="password"
                 placeholder="비밀번호를 입력해주세요"
+                className="bg-background"
               />
 
               {actionData &&
@@ -263,7 +264,7 @@ export default function Login({
                 <FormErrors errors={actionData.fieldErrors.password} />
               ) : null}
             </div>
-            <FormButton label="로그인" className="w-full" />
+            <FormButton label="로그인" className="w-full font-semibold" />
             {actionData && "error" in actionData ? (
               actionData.error === "Email not confirmed" ? (
                 <Alert variant="destructive" className="bg-destructive/10">
@@ -291,28 +292,40 @@ export default function Login({
               )
             ) : null}
           </Form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background text-muted-foreground px-2">
+                또는
+              </span>
+            </div>
+          </div>
+
           <SignInButtons />
         </CardContent>
       </Card>
-      <div className="flex flex-col items-center justify-center gap-3 text-sm">
+      <div className="flex flex-col items-center justify-center gap-4 text-sm">
         <p className="text-muted-foreground">
           계정이 없으신가요?{" "}
           <Link
             to="/join"
             viewTransition
             data-testid="form-signup-link"
-            className="text-muted-foreground hover:text-foreground text-underline underline transition-colors"
+            className="text-primary hover:text-primary/80 font-medium hover:underline"
           >
             회원가입
           </Link>
         </p>
-        <div className="flex items-center gap-2 rounded-lg border border-dashed border-blue-200 bg-blue-50/50 px-4 py-2 dark:border-blue-900 dark:bg-blue-950/20">
-          <Play className="size-4 text-blue-600 dark:text-blue-400" />
+        <div className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/50 px-4 py-2 dark:border-indigo-900 dark:bg-indigo-950/20">
+          <Play className="size-4 text-indigo-600 dark:text-indigo-400" />
           <p className="text-muted-foreground">
             <Link
               to="/demo"
               viewTransition
-              className="font-medium text-blue-600 underline transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+              className="font-medium text-indigo-600 underline transition-colors hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
             >
               로그인 없이 데모 체험하기
             </Link>
@@ -320,5 +333,27 @@ export default function Login({
         </div>
       </div>
     </div>
+  );
+}
+
+// Icon component
+function KeyIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="7.5" cy="15.5" r="5.5" />
+      <path d="m21 2-9.6 9.6" />
+      <path d="m15.5 7.5 3 3L22 7l-3-3" />
+    </svg>
   );
 }

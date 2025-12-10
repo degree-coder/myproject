@@ -117,10 +117,6 @@ export const workAnalysisSteps = pgTable(
     confidence: integer(),
     screenshot_url: text(),
     notes: text(),
-    notes_author_id: uuid().references(() => authUsers.id, {
-      onDelete: "set null",
-    }),
-    notes_updated_at: timestamp(),
     ...timestamps,
   },
   (t) => [

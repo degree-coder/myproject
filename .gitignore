@@ -151,3 +151,7 @@ dist
 .pnp.*
 .open-next/
 .vercel/
+
+# Ignore all markdown files
+*.md
+!README.md
