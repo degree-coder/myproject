@@ -84,9 +84,10 @@ export async function loader({ request }: Route.LoaderArgs) {
     }
 
     if (validData.type === "email_change") {
+      // 이메일 변경 완료 메시지와 함께 리다이렉트
+      const message = "이메일이 성공적으로 변경되었습니다";
       return redirect(
-        // @ts-ignore
-        `${validData.next}?message=${encodeURIComponent(verifyOtpData.user.msg ?? "Your email has been updated")}`,
+        `${validData.next}?message=${encodeURIComponent(message)}`,
         { headers },
       );
     }

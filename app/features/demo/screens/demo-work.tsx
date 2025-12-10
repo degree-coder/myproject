@@ -43,8 +43,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/core/components/ui/dialog";
+import { OptimizedImage } from "~/core/components/ui/optimized-image";
 import { Sheet, SheetContent, SheetTrigger } from "~/core/components/ui/sheet";
 import { useIsMobile } from "~/core/hooks/use-mobile";
+import { WorkflowThumbnail } from "~/features/work/components/workflow-thumbnail";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -317,24 +319,13 @@ export default function DemoWork({ loaderData }: Route.ComponentProps) {
               }`}
             >
               <div className="flex gap-3">
-                <div className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-slate-200 dark:bg-slate-800">
-                  {video.thumbnail ? (
-                    <img
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-slate-100 dark:bg-slate-800">
-                      <div className="rounded-full bg-white/80 p-1.5 shadow-sm dark:bg-slate-700/80">
-                        <Play className="size-3 fill-slate-900 text-slate-900 dark:fill-slate-100 dark:text-slate-100" />
-                      </div>
-                    </div>
-                  )}
-                  <div className="absolute right-1 bottom-1 rounded bg-black/60 px-1 py-0.5 text-[10px] text-white">
-                    {video.duration}
-                  </div>
-                </div>
+                <WorkflowThumbnail
+                  src={video.thumbnail}
+                  alt={video.title}
+                  size="sm"
+                  duration={video.duration}
+                  className="shrink-0 transition-transform duration-300 group-hover:scale-105"
+                />
                 <div className="min-w-0 flex-1">
                   <h4
                     className={`truncate text-sm font-medium ${
@@ -454,10 +445,13 @@ export default function DemoWork({ loaderData }: Route.ComponentProps) {
                       <div className="flex gap-4">
                         <div className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-slate-900 shadow-lg">
                           {selectedVideo.thumbnail ? (
-                            <img
+                            <OptimizedImage
                               src={selectedVideo.thumbnail}
                               alt={selectedVideo.title}
-                              className="h-full w-full object-cover"
+                              width={96}
+                              height={96}
+                              priority
+                              className="h-full w-full"
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center bg-slate-100 dark:bg-slate-800">

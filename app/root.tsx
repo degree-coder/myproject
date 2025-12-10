@@ -270,7 +270,7 @@ export default function App() {
         navigate(`/work/business-logic`);
       }
     }
-  }, [searchParams]);
+  }, [searchParams, navigate, location.pathname]);
 
   return (
     <Sheet>

@@ -57,7 +57,10 @@ export async function extractFrames(
     cleanup: async () => {
       try {
         await fs.rm(outDir, { recursive: true, force: true });
-      } catch {}
+      } catch (err) {
+        // 임시 파일 삭제 실패는 치명적이지 않으므로 경고만 출력
+        console.warn("[FFmpeg] Failed to cleanup temp dir:", outDir, err);
+      }
     },
   };
 }

@@ -60,7 +60,7 @@ export default function makeServerClient(
     process.env.SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // @ts-ignore - The type definitions don't match exactly but this works
+        // @ts-expect-error - Supabase SSR 타입 정의 불일치 (공식 문서 패턴)
         getAll() {
           // Parse cookies from the request headers
           return parseCookieHeader(request.headers.get("Cookie") ?? "");

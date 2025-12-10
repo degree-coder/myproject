@@ -20,11 +20,11 @@ export async function analyzeFramesWithGemini(
 ): Promise<GeminiStep[]> {
   const genAI = makeClient();
 
-  // 여러 모델을 fallback으로 시도
+  // 여러 모델을 fallback으로 시도 (할당량 있는 모델 우선)
   const models = [
-    options?.model ?? "gemini-2.0-flash",
-    "gemini-flash-latest",
-    "gemini-2.5-flash",
+    options?.model ?? "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
   ];
 
   // 이미지 파트 구성
@@ -53,21 +53,35 @@ export async function analyzeFramesWithGemini(
 7) 필수/선택 단계 구분
 
 【3단계: JSON 생성】
-분석된 내용을 바탕으로 다음 JSON 스키마에 맞춰 출력하세요.
-(주의: 기존 시스템 호환성을 위해 tools, errors 등의 정보는 description 필드에 포함시켜야 합니다)
+분석 결과를 아래 스키마에 맞춰 JSON으로 출력하세요.
 
+【작성 규칙 - 중요!】
+- action: 명확한 동작 (예: "로그인 버튼 클릭", "이메일 주소 입력")
+- description: 한 문장으로 간결하게, 누구나 이해할 수 있게 작성
+- 불필요한 부가 설명, 도구명, 주의사항 등은 description에 포함하지 마세요
+- 핵심 동작만 명확하게 전달
+
+【JSON 스키마】
 {
   "steps": [
     {
       "type": "click|input|navigate|wait|decision",
-      "action": "단계명 (예: 로그인 버튼 클릭)",
-      "description": "상세 설명.\\n\\n[분석 정보]\\n- 도구: [사용된 도구]\\n- 세부 액션: [액션 목록]\\n- 주의사항/에러: [오류 및 예방책]",
+      "action": "동작명",
+      "description": "이 단계에서 수행하는 작업을 한 문장으로 설명",
       "confidence": 0-100
     }
   ]
 }
 
-JSON 외의 다른 텍스트는 출력하지 마세요.`;
+【좋은 예시】
+- action: "로그인 버튼 클릭" / description: "입력한 정보로 로그인을 진행합니다"
+- action: "검색어 입력" / description: "검색창에 찾고자 하는 키워드를 입력합니다"
+
+【나쁜 예시】
+- description: "브라우저의 주소창에 URL을 입력하고 Enter 키를 눌러서 해당 페이지로 이동합니다."
+- description: "[도구: Chrome] [액션: 클릭] [주의: 오류 가능]"
+
+JSON만 출력하세요.`;
 
   // 모델을 순서대로 시도
   let lastError: Error | null = null;

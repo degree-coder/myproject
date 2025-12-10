@@ -147,41 +147,58 @@ async function performAIAnalysis(
   console.log(`[Video Analyzer] Analyzing video from path: ${storagePath}`);
   // 안전 가드
   if (!storagePath) {
-    console.warn(
-      "[Video Analyzer] storagePath is null. Falling back to mock analysis.",
-    );
-    return mockAnalysis();
+    throw new Error("비디오 저장 경로가 없습니다. 분석을 진행할 수 없습니다.");
   }
 
   // 실제 파이프라인: 다운로드 → 프레임 추출 → Gemini 호출 → 스크린샷 업로드
   try {
+    console.log(`[Video Analyzer] Step 1: Downloading video from Supabase...`);
     const { filePath, cleanup: cleanupVideo } =
       await downloadVideoFromSupabase(storagePath);
+    console.log(`[Video Analyzer] Step 1 complete: Downloaded to ${filePath}`);
+
     try {
+      console.log(`[Video Analyzer] Step 2: Extracting frames with FFmpeg...`);
       const { paths, cleanup: cleanupFrames } = await extractFrames(filePath, {
         maxFrames: 10,
       });
+      console.log(
+        `[Video Analyzer] Step 2 complete: Extracted ${paths.length} frames`,
+      );
+
       try {
         if (!paths.length) {
-          console.warn(
-            "[Video Analyzer] No frames extracted. Falling back to mock analysis.",
+          throw new Error(
+            "프레임 추출에 실패했습니다. 영상 파일을 확인해주세요.",
           );
-          return mockAnalysis();
         }
 
         // Gemini로 분석
+        console.log(`[Video Analyzer] Step 3: Analyzing frames with Gemini...`);
         const steps = await analyzeFramesWithGemini(paths);
+        console.log(
+          `[Video Analyzer] Step 3 complete: Gemini returned ${steps.length} steps`,
+        );
 
         // 프레임을 Storage에 업로드하고 URL 생성
         const screenshotUrls = await uploadFramesToStorage(paths, workflowId);
 
         // Gemini 결과를 내부 스키마로 매핑 (스크린샷 URL 포함)
+        // 스텝 수와 프레임 수가 다를 수 있으므로 유효한 URL만 매핑
+        const validUrls = screenshotUrls.filter(
+          (url): url is string => url !== null && url !== "",
+        );
+        console.log(
+          `[Video Analyzer] Steps: ${steps.length}, Valid screenshot URLs: ${validUrls.length}`,
+        );
+
         return steps.map((s, index) => ({
           type: s.type,
           action: s.action,
           description: s.description,
           confidence: s.confidence,
-          screenshot_url: screenshotUrls[index] ?? undefined,
+          // 스텝 인덱스에 해당하는 스크린샷이 있으면 할당
+          screenshot_url: validUrls[index] || undefined,
         }));
       } finally {
         await cleanupFrames();
@@ -190,52 +207,10 @@ async function performAIAnalysis(
       await cleanupVideo();
     }
   } catch (err) {
-    console.error(
-      "[Video Analyzer] Gemini pipeline failed, fallback to mock:",
-      err,
-    );
-    return mockAnalysis();
+    console.error("[Video Analyzer] AI 분석 실패:", err);
+    const errorMessage = err instanceof Error ? err.message : "알 수 없는 오류";
+    throw new Error(`AI 분석 실패: ${errorMessage}`);
   }
-}
-
-function mockAnalysis(): VideoAnalysisResult[] {
-  return [
-    {
-      type: "navigate",
-      action: "관리자 페이지 접속",
-      description: "브라우저에서 관리자 대시보드 URL 입력 및 이동",
-      confidence: 95,
-      timestamp_seconds: 5,
-    },
-    {
-      type: "input",
-      action: "로그인 정보 입력",
-      description: "이메일과 비밀번호 입력 필드에 인증 정보 작성",
-      confidence: 98,
-      timestamp_seconds: 12,
-    },
-    {
-      type: "click",
-      action: "로그인 버튼 클릭",
-      description: "화면 하단의 '로그인' 버튼을 클릭하여 인증 진행",
-      confidence: 99,
-      timestamp_seconds: 18,
-    },
-    {
-      type: "wait",
-      action: "페이지 로딩 대기",
-      description: "대시보드 페이지 로딩 완료까지 대기",
-      confidence: 92,
-      timestamp_seconds: 21,
-    },
-    {
-      type: "navigate",
-      action: "메뉴 선택",
-      description: "좌측 사이드바에서 '업무 관리' 메뉴 클릭",
-      confidence: 96,
-      timestamp_seconds: 25,
-    },
-  ];
 }
 
 /**
@@ -244,8 +219,8 @@ function mockAnalysis(): VideoAnalysisResult[] {
 async function uploadFramesToStorage(
   framePaths: string[],
   workflowId: number,
-): Promise<string[]> {
-  const urls: string[] = [];
+): Promise<(string | null)[]> {
+  const urls: (string | null)[] = [];
 
   for (let i = 0; i < framePaths.length; i++) {
     try {
@@ -278,7 +253,7 @@ async function uploadFramesToStorage(
           `[Video Analyzer] Error details:`,
           JSON.stringify(error, null, 2),
         );
-        urls.push("");
+        urls.push(null);
         continue;
       }
 
@@ -290,7 +265,7 @@ async function uploadFramesToStorage(
       );
     } catch (error) {
       console.error(`[Video Analyzer] Error uploading frame ${i}:`, error);
-      urls.push("");
+      urls.push(null);
     }
   }
 
