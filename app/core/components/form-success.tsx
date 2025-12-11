@@ -16,16 +16,39 @@ import { CheckCircle2Icon } from "lucide-react";
 
 /**
  * FormSuccess component for displaying success messages
- * 
+ *
  * This component renders a success message with a check-circle icon in green,
  * providing consistent visual feedback for successful operations throughout the application.
- * 
+ *
  * @param message - The success message to display
  * @returns A component that displays the success message with consistent styling
  */
-export default function FormSuccess({ message }: { message: string }) {
+import { cn } from "../lib/utils";
+
+/**
+ * FormSuccess component for displaying success messages
+ *
+ * This component renders a success message with a check-circle icon in green,
+ * providing consistent visual feedback for successful operations throughout the application.
+ *
+ * @param message - The success message to display
+ * @param className - Optional CSS classes to apply to the container
+ * @returns A component that displays the success message with consistent styling
+ */
+export default function FormSuccess({
+  message,
+  className,
+}: {
+  message: string;
+  className?: string;
+}) {
   return (
-    <div className="flex items-center justify-center gap-2 text-sm text-green-500">
+    <div
+      className={cn(
+        "flex items-center justify-center gap-2 text-sm text-green-500",
+        className,
+      )}
+    >
       {/* Check-circle icon to visually indicate success */}
       <CheckCircle2Icon className="size-4" />
       {/* The success message text */}

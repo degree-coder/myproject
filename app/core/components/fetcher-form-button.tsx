@@ -48,7 +48,7 @@ export default function FetcherFormButton({
   label: string;
   className?: string;
   submitting: boolean;
-} & React.ComponentProps<"button">) {
+} & React.ComponentProps<typeof Button>) {
   return (
     <Button
       className={cn(className)}
