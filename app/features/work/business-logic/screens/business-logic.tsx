@@ -336,9 +336,63 @@ export async function action({ request }: Route.ActionArgs) {
         return data({ error: "Invalid workflow ID" }, { status: 400, headers });
       }
 
-      // DB 삭제
-      const { deleteWorkflow } = await import("../queries.server");
+      // 1. Get workflow source video
+      const { getWorkflowSourceVideo, deleteVideo, deleteWorkflow } =
+        await import("../queries.server");
+      const video = await getWorkflowSourceVideo(workflowId);
+
+      // 2. Delete video from storage and DB if exists
+      if (video) {
+        console.log(
+          `[Delete] Found video record: ${video.video_id}, path: ${video.storage_path}`,
+        );
+
+        if (video.storage_path) {
+          // Use admin client for storage deletion to bypass RLS if needed, or ensuring robust access
+          const { default: adminClient } = await import(
+            "~/core/lib/supa-admin-client.server"
+          );
+
+          // 디버깅: 삭제 전 파일 목록 확인
+          try {
+            const userId = video.owner_id;
+            const { data: fileList, error: listError } =
+              await adminClient.storage
+                .from("work-videos")
+                .list(userId || undefined);
+
+            console.log(
+              `[Delete] Files in folder '${userId}':`,
+              fileList?.map((f) => f.name),
+            );
+            if (listError) console.error("[Delete] List error:", listError);
+          } catch (e) {
+            console.error("[Delete] List exception:", e);
+          }
+
+          const { data: removeData, error: storageError } =
+            await adminClient.storage
+              .from("work-videos")
+              .remove([video.storage_path]);
+
+          if (storageError) {
+            console.error(
+              "[Delete] Failed to delete video from storage:",
+              storageError,
+            );
+          } else {
+            console.log("[Delete] Storage file removed:", removeData);
+          }
+        }
+
+        // 3. Delete video record
+        await deleteVideo(video.video_id);
+        console.log(`[Delete] Video record deleted from DB`);
+      }
+
+      // 4. Delete workflow
       await deleteWorkflow(workflowId);
+      console.log(`[Delete] Workflow record deleted`);
 
       return data(
         { success: true, message: "워크플로우가 삭제되었습니다" },

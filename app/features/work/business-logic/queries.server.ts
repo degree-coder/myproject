@@ -10,6 +10,7 @@ import db from "~/core/db/drizzle-client.server";
 import { workWorkflowMembers } from "../team-management/schema";
 import { workTeamMembers } from "../team-management/team-schema";
 import { workWorkflowShares } from "../team-management/team-shares-schema";
+import { workVideos } from "../upload/schema";
 import { workAnalysisSteps, workWorkflows } from "./schema";
 
 /**
@@ -282,6 +283,34 @@ export async function updateStepScreenshot(
     .update(workAnalysisSteps)
     .set({ screenshot_url: screenshotUrl })
     .where(eq(workAnalysisSteps.step_id, stepId));
+}
+
+/**
+ * Get workflow source video info
+ */
+export async function getWorkflowSourceVideo(workflowId: number) {
+  const [workflow] = await db
+    .select({
+      source_video_id: workWorkflows.source_video_id,
+    })
+    .from(workWorkflows)
+    .where(eq(workWorkflows.workflow_id, workflowId));
+
+  if (!workflow?.source_video_id) return null;
+
+  const [video] = await db
+    .select()
+    .from(workVideos)
+    .where(eq(workVideos.video_id, workflow.source_video_id));
+
+  return video;
+}
+
+/**
+ * Delete a video record
+ */
+export async function deleteVideo(videoId: number) {
+  await db.delete(workVideos).where(eq(workVideos.video_id, videoId));
 }
 
 /**

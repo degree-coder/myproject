@@ -60,16 +60,24 @@ export async function loader({ request }: Route.LoaderArgs) {
     const { checkVideoAnalysisRateLimitStatus } = await import(
       "~/features/work/rate-limiting/rate-limit.guard"
     );
-    const rateLimitStatus = await checkVideoAnalysisRateLimitStatus(supabase);
-    return { user, rateLimitStatus };
+    const { getUserQuotaStats } = await import(
+      "~/features/work/services/quota.server"
+    );
+
+    const [rateLimitStatus, quotaStats] = await Promise.all([
+      checkVideoAnalysisRateLimitStatus(supabase),
+      getUserQuotaStats(user.id),
+    ]);
+
+    return { user, rateLimitStatus, quotaStats };
   } catch (error) {
     console.error("Rate limit check failed:", error);
-    return { user, rateLimitStatus: null };
+    return { user, rateLimitStatus: null, quotaStats: null };
   }
 }
 
 export default function Upload() {
-  const { user, rateLimitStatus } = useLoaderData<typeof loader>();
+  const { user, rateLimitStatus, quotaStats } = useLoaderData<typeof loader>();
   const revalidator = useRevalidator();
   const [searchParams] = useSearchParams();
   const teamId = searchParams.get("teamId");
@@ -162,6 +170,7 @@ export default function Upload() {
       const urlFormData = new FormData();
       urlFormData.append("filename", videoFile.file.name);
       urlFormData.append("fileType", videoFile.file.type);
+      urlFormData.append("fileSize", videoFile.file.size.toString());
 
       const urlRes = await fetch("/api/work/upload-url", {
         method: "POST",
@@ -373,6 +382,58 @@ export default function Upload() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Quota Stats Display */}
+          {quotaStats && !videoFile && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 grid gap-4 overflow-hidden md:grid-cols-2"
+            >
+              {/* Storage Quota */}
+              <div className="border-border/50 rounded-2xl border bg-slate-50/50 p-5 dark:bg-slate-900/50">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm font-medium">
+                    저장 공간 ({quotaStats.storage.label})
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                      quotaStats.storage.percentage >= 90
+                        ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                        : "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400"
+                    }`}
+                  >
+                    {quotaStats.fileLimit.label} 파일 제한
+                  </span>
+                </div>
+                <Progress
+                  value={quotaStats.storage.percentage}
+                  className={`h-2 ${
+                    quotaStats.storage.percentage >= 90
+                      ? "bg-red-100 dark:bg-red-900/20 [&>div]:bg-red-500"
+                      : "bg-indigo-100 dark:bg-indigo-900/20"
+                  }`}
+                />
+              </div>
+
+              {/* Workflow Quota */}
+              <div className="border-border/50 rounded-2xl border bg-slate-50/50 p-5 dark:bg-slate-900/50">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-muted-foreground text-sm font-medium">
+                    업무 프로세스 ({quotaStats.workflows.label})
+                  </span>
+                </div>
+                <Progress
+                  value={quotaStats.workflows.percentage}
+                  className={`h-2 ${
+                    quotaStats.workflows.percentage >= 90
+                      ? "bg-red-100 dark:bg-red-900/20 [&>div]:bg-red-500"
+                      : "bg-indigo-100 dark:bg-indigo-900/20"
+                  }`}
+                />
               </div>
             </motion.div>
           )}

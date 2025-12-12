@@ -4,6 +4,7 @@ import { data } from "react-router";
 
 import adminClient from "~/core/lib/supa-admin-client.server";
 import makeServerClient from "~/core/lib/supa-client.server";
+import { checkStorageQuota } from "~/features/work/services/quota.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const [client] = makeServerClient(request);
@@ -19,13 +20,17 @@ export async function action({ request }: ActionFunctionArgs) {
     const formData = await request.formData();
     const filename = formData.get("filename") as string;
     const fileType = formData.get("fileType") as string;
+    const fileSize = formData.get("fileSize") as string;
 
-    if (!filename || !fileType) {
+    if (!filename || !fileType || !fileSize) {
       return data(
-        { error: "Filename and fileType are required" },
+        { error: "Filename, fileType and fileSize are required" },
         { status: 400 },
       );
     }
+
+    // 파일 용량 제한 확인
+    await checkStorageQuota(user.id, Number(fileSize));
 
     // 파일 확장자 추출 및 안전한 파일명 생성
     const fileExt = filename.split(".").pop() || "bin";

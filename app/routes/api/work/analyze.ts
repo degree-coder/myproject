@@ -12,6 +12,7 @@ import db from "~/core/db/drizzle-client.server";
 import makeServerClient from "~/core/lib/supa-client.server";
 import { workWorkflows } from "~/features/work/business-logic/schema";
 import { requireVideoAnalysisRateLimit } from "~/features/work/rate-limiting/rate-limit.guard";
+import { checkWorkflowQuota } from "~/features/work/services/quota.server";
 import { analyzeVideoInBackground } from "~/features/work/services/video-analyzer.server";
 import { workWorkflowMembers } from "~/features/work/team-management/schema";
 import { workTeamMembers } from "~/features/work/team-management/team-schema";
@@ -40,6 +41,13 @@ export async function action({ request }: Route.ActionArgs) {
     console.error("Rate limit check failed:", error);
     // React Router의 data() 함수가 반환한 에러는 자동으로 응답으로 처리됨
     throw error;
+  }
+
+  // 워크플로우 생성 한도 확인
+  try {
+    await checkWorkflowQuota(user.id);
+  } catch (error: any) {
+    return Response.json({ error: error.message }, { status: 403, headers });
   }
 
   try {
