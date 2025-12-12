@@ -69,6 +69,7 @@ export async function analyzeVideoInBackground(
         const analysisResults = await performAIAnalysis(
           video.storage_path,
           workflowId,
+          videoId, // Pass videoId to update progress inside
         );
 
         // 4. 분석 단계 저장
@@ -143,6 +144,7 @@ export async function analyzeVideoInBackground(
 async function performAIAnalysis(
   storagePath: string | null,
   workflowId: number,
+  videoId: number,
 ): Promise<VideoAnalysisResult[]> {
   console.log(`[Video Analyzer] Analyzing video from path: ${storagePath}`);
   // 안전 가드
@@ -157,14 +159,26 @@ async function performAIAnalysis(
       await downloadVideoFromSupabase(storagePath);
     console.log(`[Video Analyzer] Step 1 complete: Downloaded to ${filePath}`);
 
+    // Progress: 30% (Download Complete)
+    await db
+      .update(workVideos)
+      .set({ progress: 30 })
+      .where(eq(workVideos.video_id, videoId));
+
     try {
       console.log(`[Video Analyzer] Step 2: Extracting frames with FFmpeg...`);
       const { paths, cleanup: cleanupFrames } = await extractFrames(filePath, {
-        maxFrames: 10,
+        maxFrames: 30, // Increased to 30 for granular analysis
       });
       console.log(
         `[Video Analyzer] Step 2 complete: Extracted ${paths.length} frames`,
       );
+
+      // Progress: 50% (Frame Extraction Complete)
+      await db
+        .update(workVideos)
+        .set({ progress: 50 })
+        .where(eq(workVideos.video_id, videoId));
 
       try {
         if (!paths.length) {
@@ -180,8 +194,20 @@ async function performAIAnalysis(
           `[Video Analyzer] Step 3 complete: Gemini returned ${steps.length} steps`,
         );
 
+        // Progress: 70% (AI Analysis Complete)
+        await db
+          .update(workVideos)
+          .set({ progress: 70 })
+          .where(eq(workVideos.video_id, videoId));
+
         // 프레임을 Storage에 업로드하고 URL 생성
         const screenshotUrls = await uploadFramesToStorage(paths, workflowId);
+
+        // Progress: 90% (Screenshot Upload Complete)
+        await db
+          .update(workVideos)
+          .set({ progress: 90 })
+          .where(eq(workVideos.video_id, videoId));
 
         // Gemini 결과를 내부 스키마로 매핑 (스크린샷 URL 포함)
         // 스텝 수와 프레임 수가 다를 수 있으므로 유효한 URL만 매핑
