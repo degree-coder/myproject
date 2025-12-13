@@ -739,10 +739,10 @@ function DemoStyleStep({
                       <div className="relative overflow-hidden rounded-lg border border-slate-200 shadow-sm dark:border-slate-800">
                         {step.screenshot_url ? (
                           <div className="relative aspect-video">
-                            <img
+                            <OptimizedImage
                               src={step.screenshot_url}
                               alt={currentAction}
-                              className="h-full w-full object-cover"
+                              className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                             />
                             {isEditMode && (
                               <div className="absolute top-2 right-2">

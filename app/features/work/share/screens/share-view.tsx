@@ -23,6 +23,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/core/components/ui/card";
+import { OptimizedImage } from "~/core/components/ui/optimized-image";
 import { Separator } from "~/core/components/ui/separator";
 
 export function meta({}: Route.MetaArgs) {
@@ -271,11 +272,10 @@ export default function ShareView() {
                     {/* Screenshot if available */}
                     {step.screenshot_url && (
                       <div className="mt-4 overflow-hidden rounded-lg border border-slate-200 shadow-sm dark:border-slate-800">
-                        <img
+                        <OptimizedImage
                           src={step.screenshot_url}
                           alt={`Step ${step.sequence_no} screenshot`}
                           className="aspect-video w-full object-cover transition-transform duration-500 hover:scale-105"
-                          loading="lazy"
                         />
                       </div>
                     )}
